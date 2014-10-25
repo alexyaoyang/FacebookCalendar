@@ -1,32 +1,34 @@
 <!DOCTYPE html>
 <html lang="en" class="no-js">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
-	<title>Facebook Challenge</title>
-	<meta name="description" content="Facebook Challenge">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="css/boilerplate.css">
-	<link rel="stylesheet" href="css/app.css">
-	<script src="js/jquery.js"></script>
-	<script src="js/app.js"></script>
-	<script type="text/javascript">
-	</script>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+		<title>Facebook Challenge</title>
+		<meta name="description" content="Facebook Challenge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="css/boilerplate.css">
+		<link rel="stylesheet" href="css/app.css">
+		<script src="js/jquery.js"></script>
+		<script src="js/app.js"></script>
 	</head>
-	<body onload="initialize()">
-			<!-- <div id="nav-container" class="white">
-				facebook challenge
-			</div> -->
+	<body>
+		<div id="nav-container" class="white bold">
+			facebook challenge
+		</div>
 
-			<div id="main-container">
-				<div id="time-container">
-					
-				</div>
+		<div id="main-container">
+			<div id="time-container" class="small-font">
 
 			</div>
-
-			<script type="text/javascript">
-			</script>
-		</body>
-		</html>
+			<div id="event-container">
+				
+			</div>
+		</div>
+		<script type="text/javascript">
+		initialize();
+		layOutDay([{start: 30, end: 150}]);
+		// layOutDay([{start: 30, end: 150}, {start: 540, end: 600}, {start: 560, end: 620}, {start: 610, end: 670}]);
+		</script>
+	</body>
+	</html>
