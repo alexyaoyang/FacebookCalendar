@@ -1,0 +1,9 @@
+body, h1, h2, h3, h4, h5, h6 {font-family:Lucida Grande,Tahoma;font-weight: 100;margin:0}
+.uppercase{text-transform: uppercase}
+.bold{font-weight:600}
+.vertical-center{display:table}
+.vertical-center *{display:table-cell;vertical-align:middle}
+.facebook-color{color:#3b5998}
+.white{color:white}
+
+#nav-container{margin-bottom:50px;background-color:#3b5998;border-radius: 2px;margin: 0 5%;padding:5px 10px}
