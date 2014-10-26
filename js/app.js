@@ -139,8 +139,8 @@ function checkIfOverlap(e1, e2){
 	var e2start = e2.start;
 	var e2end = e2.end;
 
-	return (e1start >= e2start && e1start <= e2end || 
-	    	e2start >= e1start && e2start <= e1end)
+	return (e1start > e2start && e1start < e2end || 
+	    	e2start > e1start && e2start < e1end)
 }
 
 //sort based on start time
