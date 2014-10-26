@@ -6,13 +6,13 @@ function layOutDay(events){
 	var eventLocation = 'Sample Location';
 	var maxWidth = $('#event-container').width();
 	for(var i = 0; i < events.length; i++){
-		console.log(i+': '+events[i].start+' '+events[i].end+' '+events[i].overlaps+' overlapped with: '+events[i].overlapsWith);
+		console.log(i+': '+events[i].start+' '+events[i].end+' '+events[i].divisor+' overlapped with: '+events[i].overlapsWith);
 		var event = $('<div/>',{
 			id:'event-'+i,
 			class:'event gray small-font',
 			html:'<span class="facebook-color big-font">'+eventName+' '+i+'</span><br>'+eventLocation
 		});
-		var width = maxWidth/events[i].overlaps;	
+		var width = maxWidth/events[i].divisor;	
 		var height = events[i].duration;
 		var start = i==0?events[i].start:events[i].start-events[i].previousDurations;
 		events[i].width = width;
@@ -27,6 +27,7 @@ function layOutDay(events){
 	lastCheck(events.length);
 }
 
+//clears calendar for next set of instructions
 function clearCalendar(){
 	var i=0;
 	while(true){
@@ -38,11 +39,10 @@ function clearCalendar(){
 	}
 }
 
-//preprocess events and add # of overlaps, who it overlaps with and total duration so far
+//preprocess events and add divisor, who it overlaps with and total duration so far
 function addInfo(events){
 	var accumulativeDuration = 0;
 	for(var i = 0; i < events.length; i++){
-		var overlaps = events[i].overlaps==null?1:events[i].overlaps;
 		if(events[i].overlapsWith==null){
 			events[i].overlapsWith = [];
 		}
@@ -54,23 +54,33 @@ function addInfo(events){
 				if(events[j].overlapsWith==null){
 					events[j].overlapsWith = [];
 				}
-				if(events[i].overlapsWith.length>0){
-					for(var k = 0; k < events[i].overlapsWith.length; k++){
-						if(checkIfOverlap(events[j],events[events[i].overlapsWith[k]])) { overlaps++;break; }
-					}
-				}
-				else if(events[i].overlapsWith.length==0) { overlaps++; }
-				
 				events[i].overlapsWith.push(j);
 				events[j].overlapsWith.push(i);
-				if(events[j].overlaps==null){
-					events[j].overlaps = 2;
-				}
-				else { events[j].overlaps++; }
 			}
 			else{ break; }
 		}
-		events[i].overlaps = overlaps;
+
+		// calculating divisor
+		var children = events[i].overlapsWith;
+		if(children.length == 0){
+			events[i].divisor = 1;
+		}
+		else {
+			var maxOverlaps = 2;
+			var currentOverlap = 2;
+			for(var k = 0; k < children.length-1; k++){
+				if(checkIfOverlap(events[children[k+1]],events[children[k]])){
+					currentOverlap++;
+				}
+				else {
+					if(currentOverlap>maxOverlaps){
+						maxOverlaps = currentOverlap;
+					}
+					currentOverlap = 2;
+				}
+			}
+			events[i].divisor = maxOverlaps<currentOverlap?currentOverlap:maxOverlaps;
+		}
 	}
 	return events;
 }
@@ -79,12 +89,14 @@ function addInfo(events){
 function moveOverlap(events){
 	for(var i = 0; i < events.length; i++){
 		for(var k = 0; k < events[i].overlapsWith.length; k++){
-			var multiplier = 1;
-			var eventToMove = $('#event-'+events[i].overlapsWith[k]);
-			while(doTheyOverlap($('#event-'+i),eventToMove)){
-				console.log("overlapped: "+i+' '+events[i].overlapsWith[k]);
-				eventToMove.css('left',multiplier*events[i].width)
-				multiplier++;
+			if(events[i].overlapsWith[k]>i){
+				var multiplier = 1;
+				var eventToMove = $('#event-'+events[i].overlapsWith[k]);
+				while(doTheyOverlap($('#event-'+i),eventToMove)){
+					console.log("overlapped: "+i+' '+events[i].overlapsWith[k]);
+					var left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+events[events[i].overlapsWith[k]].width;
+					eventToMove.css('left',left);
+				}
 			}
 		}
 	}
