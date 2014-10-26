@@ -1,45 +1,74 @@
 function layOutDay(events){
+	clearCalendar();
 	events = sort(events);
 	events = addInfo(events);
 	var eventName = 'Sample Item';
 	var eventLocation = 'Sample Location';
 	var maxWidth = $('#event-container').width();
 	for(var i = 0; i < events.length; i++){
-		console.log(i+': '+events[i].start+' '+events[i].end+' '+events[i].overlaps+' '+events[i].overlapsWith);
+		console.log(i+': '+events[i].start+' '+events[i].end+' '+events[i].overlaps+' overlapped with: '+events[i].overlapsWith);
 		var event = $('<div/>',{
 			id:'event-'+i,
-			class:'event',
-			html:'<span class="facebook-color">'+eventName+i+'</span><br>'+eventLocation
+			class:'event gray small-font',
+			html:'<span class="facebook-color big-font">'+eventName+' '+i+'</span><br>'+eventLocation
 		});
-		var width = maxWidth/events[i].overlaps;
+		var width = maxWidth/events[i].overlaps;	
 		var height = events[i].duration;
 		var start = i==0?events[i].start:events[i].start-events[i].previousDurations;
 		events[i].width = width;
 
-		event.css('height',height);
-		event.css('width',width-4); //-4 for blue event border
+		event.css('height',height-2); //-2 for top and bottom border (2 x 1)
+		event.css('width',width-10); //-10 for blue event border (4) + right gray border (1) + padding (5)
 		event.css('top',start);
 
 		event.appendTo('#event-container');
 	}
 	moveOverlap(events);
+	lastCheck(events.length);
+}
+
+function clearCalendar(){
+	var i=0;
+	while(true){
+		if($('#event-'+i).length){
+			$('#event-'+i).remove();
+		}
+		else { break; }
+		i++;
+	}
 }
 
 //preprocess events and add # of overlaps, who it overlaps with and total duration so far
 function addInfo(events){
 	var accumulativeDuration = 0;
 	for(var i = 0; i < events.length; i++){
-		var overlaps = 1;
-		events[i].overlapsWith = [];
+		var overlaps = events[i].overlaps==null?1:events[i].overlaps;
+		if(events[i].overlapsWith==null){
+			events[i].overlapsWith = [];
+		}
 		events[i].duration = events[i].end-events[i].start;
 		events[i].previousDurations = accumulativeDuration;
 		accumulativeDuration += events[i].duration;
 		for(var j = i+1; j < events.length; j++){
-			if(checkIfOverlap(events[i],events[j])){ overlaps++;events[i].overlapsWith.push(j); }
+			if(checkIfOverlap(events[i],events[j])){
+				if(events[j].overlapsWith==null){
+					events[j].overlapsWith = [];
+				}
+				if(events[i].overlapsWith.length>0){
+					for(var k = 0; k < events[i].overlapsWith.length; k++){
+						if(checkIfOverlap(events[j],events[events[i].overlapsWith[k]])) { overlaps++;break; }
+					}
+				}
+				else if(events[i].overlapsWith.length==0) { overlaps++; }
+				
+				events[i].overlapsWith.push(j);
+				events[j].overlapsWith.push(i);
+				if(events[j].overlaps==null){
+					events[j].overlaps = 2;
+				}
+				else { events[j].overlaps++; }
+			}
 			else{ break; }
-		}
-		if(i!=0){
-			overlaps = Math.max(overlaps,events[i-1].overlaps);
 		}
 		events[i].overlaps = overlaps;
 	}
@@ -52,12 +81,19 @@ function moveOverlap(events){
 		for(var k = 0; k < events[i].overlapsWith.length; k++){
 			var multiplier = 1;
 			var eventToMove = $('#event-'+events[i].overlapsWith[k]);
-			if(doTheyOverlap($('#event-'+i),eventToMove)){
+			while(doTheyOverlap($('#event-'+i),eventToMove)){
 				console.log("overlapped: "+i+' '+events[i].overlapsWith[k]);
 				eventToMove.css('left',multiplier*events[i].width)
 				multiplier++;
 			}
 		}
+	}
+}
+
+function lastCheck(length){
+	for(var i = 0; i < length; i++){
+
+		document.getElementById('event-3').getBoundingClientRect();
 	}
 }
 
@@ -81,10 +117,6 @@ function findSmallestX(div0, div1){
 function xInstersection(div0, div1){
     var divX0 = findSmallestX(div0, div1);
     var divX1 = (div0 != divX0)? div0 : div1;
-    console.log("checking value0: "+((divX0.offset().left + divX0.width()) - divX1.offset().left));
-    console.log("checking value1: "+divX0.offset().left);
-    console.log("checking value2: "+divX0.width());
-    console.log("checking value3: "+divX1.offset().left);
     return (divX0.offset().left + divX0.width()) - divX1.offset().left >= 0;
 }
 
@@ -95,8 +127,8 @@ function checkIfOverlap(e1, e2){
 	var e2start = e2.start;
 	var e2end = e2.end;
 
-	return (e1start > e2start && e1start < e2end || 
-	    	e2start > e1start && e2start < e1end)
+	return (e1start >= e2start && e1start <= e2end || 
+	    	e2start >= e1start && e2start <= e1end)
 }
 
 //sort based on start time
