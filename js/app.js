@@ -18,7 +18,7 @@ function renderUI(events){
 		console.log('event '+i+' divisor: '+events[i].divisor+' overlapped with: '+events[i].overlapsWith);
 		var markup = "";
 		if(events[i].duration>15){
-			markup = '<span class="facebook-color big-font">'+eventName+' </span><br>';
+			markup = '<span class="facebook-color big-font">'+eventName+i+' </span><br>';
 		}
 		if(events[i].duration>29){
 			markup += eventLocation;
@@ -67,6 +67,11 @@ function addInfo(events){
 	for(var i = 0; i < events.length; i++){
 		if(events[i].overlapsWith==null){
 			events[i].overlapsWith = [];
+		}
+		if(events[i].start>events[i].end){
+			var temp = events[i].start;
+			events[i].start = events[i].end;
+			events[i].end = temp;
 		}
 		events[i].duration = events[i].end-events[i].start;
 		events[i].previousDurations = accumulativeDuration;
