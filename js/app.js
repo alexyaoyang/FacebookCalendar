@@ -55,7 +55,6 @@ function clearCalendar(){
 //preprocess events: total duration so far, add into tree, who it overlaps with and add divisor
 function addInfo(events){
 	var visited = Array.apply(null, new Array(events.length)).map(Number.prototype.valueOf,0); //visited array for dfs
-	//for(var j = 0; j < events.length; j++){ visited.push(0); } 
 	var accumulativeDuration = 0;
 	for(var i = 0; i < events.length; i++){
 		if(events[i].overlapsWith==null){
