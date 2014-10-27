@@ -16,7 +16,10 @@ function renderUI(events){
 	var maxWidth = $('#event-container').width();
 	for(var i = 0; i < events.length; i++){
 		console.log('event '+i+' divisor: '+events[i].divisor+' overlapped with: '+events[i].overlapsWith);
-		var markup = '<span class="facebook-color big-font">'+eventName+' </span><br>';
+		var markup = "";
+		if(events[i].duration>15){
+			markup = '<span class="facebook-color big-font">'+eventName+' </span><br>';
+		}
 		if(events[i].duration>29){
 			markup += eventLocation;
 		}
@@ -218,7 +221,8 @@ function yInstersection(div0, div1){
     var divY0 = findSmallestY(div0, div1);
     var divY1 = (div0 != divY0)? div0 : div1;
 
-    return (divY0.offset().top + divY0.height()) - divY1.offset().top >= 0;
+    var test = (divY0.offset().top + divY0.height()) - divY1.offset().top;
+    return (divY0.offset().top + divY0.height()) - divY1.offset().top >= -2;
 }
 
 function findSmallestX(div0, div1){
@@ -228,7 +232,8 @@ function findSmallestX(div0, div1){
 function xInstersection(div0, div1){
     var divX0 = findSmallestX(div0, div1);
     var divX1 = (div0 != divX0)? div0 : div1;
-    return (divX0.offset().left + divX0.width()) - divX1.offset().left >= 0;
+    var test =(divX0.offset().left + divX0.width()) - divX1.offset().left;
+    return (divX0.offset().left + divX0.width()) - divX1.offset().left >= -5;
 }
 
 //check if two events's time overlap
@@ -238,8 +243,10 @@ function checkIfOverlap(e1, e2){
 	var e2start = e2.start;
 	var e2end = e2.end;
 
-	return (e1start > e2start && e1start < e2end || 
-	    	e2start > e1start && e2start < e1end)
+	if(e1start==e2start && e1end == e2end) return true;
+
+	return (e1start >= e2start && e1start < e2end || 
+	    	e2start >= e1start && e2start < e1end)
 }
 
 //sort based on start time
