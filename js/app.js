@@ -16,7 +16,7 @@ function renderUI(events){
 	var maxWidth = $('#event-container').width();
 	for(var i = 0; i < events.length; i++){
 		console.log('event '+i+' divisor: '+events[i].divisor+' overlapped with: '+events[i].overlapsWith);
-		var markup = '<span class="facebook-color big-font">'+eventName+' '+i+'</span><br>';
+		var markup = '<span class="facebook-color big-font">'+eventName+' </span><br>';
 		if(events[i].duration>29){
 			markup += eventLocation;
 		}
