@@ -91,8 +91,9 @@ function addInfo(events){
 			else{
 				var deepest = tree.find(deepestFound);
 				//if first found and last found depth is same, that is the only place to insert new event
-				if(deepest.depth == events[i].firstFoundDepth && deepest.depth>1){ 
-					deepest.parent.appendChild(events[i],"event-"+i);
+				if(deepest.depth == events[i].firstFoundDepth){
+					if(deepest.depth>1) { deepest.parent.appendChild(events[i],"event-"+i); }
+					else { deepest.appendChild(events[i],"event-"+i); }
 				}
 				else{
 					var it = deepest.parent;
@@ -166,6 +167,7 @@ function setDivisor(events, eventTree, maxDivisor){
 			else if(events[eventTree.data.eventID].divisor < maxDivisor){
 				events[eventTree.data.eventID].divisor = maxDivisor;
 			}
+			//below is probably wrong
 			if(eventTree.parent.depth == 1){
 				if(events[eventTree.parent.data.eventID].divisor == null){
 					events[eventTree.parent.data.eventID].divisor = maxDivisor;
