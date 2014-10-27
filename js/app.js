@@ -3,6 +3,7 @@ var tree = new Arboreal(tree,{},"event-root");
 
 function layOutDay(events){
 	clearCalendar();
+	swapStartEndIfNeeded(events);
 	sort(events);
 	addInfo(events);
 	renderUI(events);
@@ -68,11 +69,6 @@ function addInfo(events){
 	for(var i = 0; i < events.length; i++){
 		if(events[i].overlapsWith==null){
 			events[i].overlapsWith = [];
-		}
-		if(events[i].start>events[i].end){
-			var temp = events[i].start;
-			events[i].start = events[i].end;
-			events[i].end = temp;
 		}
 		events[i].duration = events[i].end-events[i].start;
 		events[i].previousDurations = accumulativeDuration;
@@ -160,9 +156,6 @@ function setDivisor(events, eventTree, maxDivisor){
 	if(eventTree.children.length == 0){
 		maxDivisor = eventTree.depth;
 		events[eventTree.data.eventID].divisor = maxDivisor;
-		// if(eventTree.parent.depth>0){
-		// 	events[eventTree.parent.data.eventID].divisor = maxDivisor;
-		// }
 	}
 	else{
 		for(var i = 0; i < eventTree.children.length; i++){
@@ -263,6 +256,16 @@ function checkIfOverlap(e1, e2){
 
 	return (e1start >= e2start && e1start < e2end || 
 	    	e2start >= e1start && e2start < e1end)
+}
+
+function swapStartEndIfNeeded(events){
+	for(var i = 0; i < events.length; i++){
+		if(events[i].start>events[i].end){
+			var temp = events[i].start;
+			events[i].start = events[i].end;
+			events[i].end = temp;
+		}
+	}
 }
 
 //sort based on start time
