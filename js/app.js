@@ -16,33 +16,35 @@ function renderUI(events){
 	var maxWidth = $('#event-container').width();
 	for(var i = 0; i < events.length; i++){
 		console.log('event '+i+' divisor: '+events[i].divisor+' overlapped with: '+events[i].overlapsWith);
+		var width = maxWidth/events[i].divisor;	
+		var height = events[i].duration;
 		var markup = "";
-		if(events[i].duration>15){
+		if(height>15 && width>45){
 			markup = '<span class="facebook-color big-font">'+eventName+i+' </span><br>';
 		}
-		if(events[i].duration>29){
+		if(height>29 && width>35){
 			markup += eventLocation;
 		}
 		var event = $('<div/>',{
 			id:'event-'+i,
 			class:'event gray small-font',
-			html:markup
+			html:markup,
+			divisor:events[i].divisor
 		});
-		var width = maxWidth/events[i].divisor;	
-		var height = events[i].duration;
 		var start = i==0?events[i].start:events[i].start-events[i].previousDurations;
 		events[i].width = width;
 
 		event.css('height',height>2?height-2:0); //-2 for top and bottom border (2 x 1)
-		event.css('width',width-10); //-10 for blue event border (4) + right gray border (1) + padding (5)
+		event.css('width',width>10?width-10:0); //-10 for blue event border (4) + right gray border (1) + padding (5)
 		event.css('top',start);
 
 		if(height == 1){
 			event.css('border-top','none');
 		}
-		if(height>0){
-			event.appendTo('#event-container');
+		else if(height == 0){
+			event.css('border','none');
 		}
+		event.appendTo('#event-container');
 	}
 }
 
@@ -62,7 +64,6 @@ function clearCalendar(){
 
 //preprocess events: total duration so far, add into tree, who it overlaps with and add divisor
 function addInfo(events){
-	var visited = Array.apply(null, new Array(events.length)).map(Number.prototype.valueOf,0); //visited array for dfs
 	var accumulativeDuration = 0;
 	for(var i = 0; i < events.length; i++){
 		if(events[i].overlapsWith==null){
@@ -84,7 +85,7 @@ function addInfo(events){
 		else {
 			var deepestFound = "event-root";
 			for(var k = 0; k < tree.children.length; k++){
-				deepestFound = searchForOverlap(events[i],tree.children[k],visited,"event-root");
+				deepestFound = searchForOverlap(events[i],tree.children[k],"event-root");
 				if(deepestFound != "event-root"){ events[i].deepestFound = deepestFound;break; }
 			}
 			console.log("event "+i+ " deepestFound: "+deepestFound);
@@ -135,14 +136,12 @@ function addInfo(events){
 		}
 	}
 	for(var k = 0; k < tree.children.length; k++){
-		setDivisor(events, tree.children[k], visited, 1);
+		setDivisor(events, tree.children[k], 1);
 	}
 }
 
 //dfs to find new event's last overlap with existing event
-function searchForOverlap(event, eventTree, visited, found){
-	visited[eventTree.data.eventID]=1;
-	
+function searchForOverlap(event, eventTree, found){
 	if(checkIfOverlap(event,eventTree.data)){
 		found = eventTree.id;
 		if(event.firstFoundDepth==null){
@@ -150,29 +149,36 @@ function searchForOverlap(event, eventTree, visited, found){
 		}
 	}
 	for(var i = 0; i < eventTree.children.length; i++){
-		found = searchForOverlap(event, eventTree.children[i], visited, found);
+		found = searchForOverlap(event, eventTree.children[i], found);
 	}
 	
 	return found;
 }
 
 //dfs to set divisor for UI rendering
-function setDivisor(events, eventTree, visited, maxDivisor){
-	visited[eventTree.data.eventID]=1;
-	
+function setDivisor(events, eventTree, maxDivisor){
 	if(eventTree.children.length == 0){
 		maxDivisor = eventTree.depth;
 		events[eventTree.data.eventID].divisor = maxDivisor;
+		// if(eventTree.parent.depth>0){
+		// 	events[eventTree.parent.data.eventID].divisor = maxDivisor;
+		// }
 	}
 	else{
 		for(var i = 0; i < eventTree.children.length; i++){
-			maxDivisor = setDivisor(events, eventTree.children[i], visited, maxDivisor);
+			maxDivisor = setDivisor(events, eventTree.children[i], maxDivisor);
 			if(events[eventTree.data.eventID].divisor == null){
 				events[eventTree.data.eventID].divisor = maxDivisor;
 			}
-			else {
-				if(events[eventTree.data.eventID].divisor < maxDivisor){
-					events[eventTree.data.eventID].divisor = maxDivisor;
+			else if(events[eventTree.data.eventID].divisor < maxDivisor){
+				events[eventTree.data.eventID].divisor = maxDivisor;
+			}
+			if(eventTree.parent.depth == 1){
+				if(events[eventTree.parent.data.eventID].divisor == null){
+					events[eventTree.parent.data.eventID].divisor = maxDivisor;
+				}
+				else if(events[eventTree.parent.data.eventID].divisor < maxDivisor){
+					events[eventTree.parent.data.eventID].divisor = maxDivisor;
 				}
 			}
 		}
