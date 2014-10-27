@@ -33,11 +33,16 @@ function renderUI(events){
 		var start = i==0?events[i].start:events[i].start-events[i].previousDurations;
 		events[i].width = width;
 
-		event.css('height',height-2); //-2 for top and bottom border (2 x 1)
+		event.css('height',height>2?height-2:0); //-2 for top and bottom border (2 x 1)
 		event.css('width',width-10); //-10 for blue event border (4) + right gray border (1) + padding (5)
 		event.css('top',start);
 
-		event.appendTo('#event-container');
+		if(height == 1){
+			event.css('border-top','none');
+		}
+		if(height>0){
+			event.appendTo('#event-container');
+		}
 	}
 }
 
