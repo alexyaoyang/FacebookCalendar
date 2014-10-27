@@ -1,3 +1,5 @@
+var tree = new Arboreal(tree,{},"event-root");
+
 function layOutDay(events){
 	clearCalendar();
 	events = sort(events);
@@ -37,10 +39,33 @@ function clearCalendar(){
 		else { break; }
 		i++;
 	}
+	tree = new Arboreal(tree,{},"event-root");
+	tree.depth = 0;
+}
+
+function searchForOverlap(event, eventTree, visited, found){
+	visited[eventTree.data.eventID]=1;
+	
+	if(checkIfOverlap(event,eventTree.data)){
+		found = eventTree.id;
+		if(event.firstFoundDepth==null){
+			event.firstFoundDepth = eventTree.depth;
+		}
+	}
+	for(var i = 0; i < eventTree.children.length; i++){
+		console.log(eventTree.children[i].id);
+		found = searchForOverlap(event, eventTree.children[i], visited, found);
+	}
+	
+	return found;
 }
 
 //preprocess events and add divisor, who it overlaps with and total duration so far
 function addInfo(events){
+	var visited = [];
+	for(var j = 0; j < events.length; j++){
+		visited.push(0);
+	}
 	var accumulativeDuration = 0;
 	for(var i = 0; i < events.length; i++){
 		if(events[i].overlapsWith==null){
@@ -48,7 +73,50 @@ function addInfo(events){
 		}
 		events[i].duration = events[i].end-events[i].start;
 		events[i].previousDurations = accumulativeDuration;
+		events[i].eventID = i;
 		accumulativeDuration += events[i].duration;
+
+		if(tree.getLength() == 1){
+			tree.appendChild(events[i],"event-"+i);
+		}
+		else {
+			var deepestFound = "event-root";
+			for(var k = 0; k < tree.children.length; k++){
+				deepestFound = searchForOverlap(events[i],tree.children[k],visited,"event-root");
+				if(deepestFound != "event-root"){ events[i].deepestFound = deepestFound;break; }
+			}
+			console.log(i+ " deepestFound: "+deepestFound);
+			if(k == tree.children.length){
+				tree.appendChild(events[i],"event-"+i);
+			}
+			else{
+				var deepest = tree.find(deepestFound);
+				if(deepest.depth == events[i].firstFoundDepth && deepest.depth>1){
+					deepest.parent.appendChild(events[i],"event-"+i);
+				}
+				else{
+					var it = deepest.parent;
+					var hasGap = false;
+					while(it.id!="event-root"){
+						if(!checkIfOverlap(events[i],events[it.data.eventID])){
+							hasGap = true;
+							break;
+						}
+						it = it.parent;
+					}
+					if(hasGap){
+						while(!checkIfOverlap(events[i],events[it.parent.data.eventID])){ it=it.parent; }
+
+						it.appendChild(events[i],"event-"+i);
+					}
+					else{
+						deepest.appendChild(events[i],"event-"+i);
+					}
+				}
+			}
+
+		}
+		console.log(tree);
 		for(var j = i+1; j < events.length; j++){
 			if(checkIfOverlap(events[i],events[j])){
 				if(events[j].overlapsWith==null){
@@ -60,29 +128,85 @@ function addInfo(events){
 			else{ break; }
 		}
 
-		// calculating divisor
-		var children = events[i].overlapsWith;
-		if(children.length == 0){
-			events[i].divisor = 1;
-		}
-		else {
-			var maxOverlaps = 2;
-			var currentOverlap = 2;
-			for(var k = 0; k < children.length-1; k++){
-				if(checkIfOverlap(events[children[k+1]],events[children[k]])){
-					currentOverlap++;
-				}
-				else {
-					if(currentOverlap>maxOverlaps){
-						maxOverlaps = currentOverlap;
-					}
-					currentOverlap = 2;
-				}
-			}
-			events[i].divisor = maxOverlaps<currentOverlap?currentOverlap:maxOverlaps;
-		}
+		// // calculating divisor
+		// var children = events[i].overlapsWith;
+		// if(children.length == 0){
+		// 	events[i].divisor = 1;
+		// }
+		// else {
+		// 	var archTree = [];
+		// 	for(var k = 0; k < children.length; k++){
+		// 		var curEvent = children[k];
+		// 		if(archTree.length == 0){ //create new branch
+		// 			archTree.push({branch:[curEvent]});
+		// 		}
+		// 		else {
+		// 			var m = 0;
+		// 			for(m = 0; m < archTree.length; m++){ //check with all other branch parents
+		// 				var branch = archTree[m].branch;
+		// 				if(checkIfOverlap(events[curEvent],events[branch[0]])){ 
+		// 					branch.push(curEvent); // add to that branch, if is child of that branch parent
+		// 					break;
+		// 				}
+		// 			}
+		// 			if(m == archTree.length){
+		// 				archTree.push({branch:[curEvent]}); //create new branch
+		// 			}
+		// 		}
+		// 	}
+		// 	//get the max branch height for event i
+		// 	var maxOverlaps = 1;
+		// 	for(var m = 0; m < archTree.length; m++){
+		// 		if(archTree[m].branch.length>maxOverlaps){
+		// 			maxOverlaps = archTree[m].branch.length;
+		// 		}
+		// 	}
+
+		// 	events[i].divisor = maxOverlaps+1;
+
+		// 	// var maxOverlaps = 2;
+		// 	// var currentOverlap = 2;
+		// 	// for(var k = 0; k < children.length-1; k++){
+		// 	// 	if(checkIfOverlap(events[children[k+1]],events[children[k]])){
+		// 	// 		currentOverlap++;
+		// 	// 	}
+		// 	// 	else {
+		// 	// 		if(currentOverlap>maxOverlaps){
+		// 	// 			maxOverlaps = currentOverlap;
+		// 	// 		}
+		// 	// 		currentOverlap = 2;
+		// 	// 	}
+		// 	// }
+		// 	// events[i].divisor = maxOverlaps<currentOverlap?currentOverlap:maxOverlaps;
+		// }
+	}
+	for(var k = 0; k < tree.children.length; k++){
+		setDivisor(events, tree.children[k], visited, 1);
 	}
 	return events;
+}
+
+function setDivisor(events, eventTree, visited, maxDivisor){
+	visited[eventTree.data.eventID]=1;
+	
+	if(eventTree.children.length == 0){
+		maxDivisor = eventTree.depth;
+		events[eventTree.data.eventID].divisor = maxDivisor;
+	}
+	else{
+		for(var i = 0; i < eventTree.children.length; i++){
+			maxDivisor = setDivisor(events, eventTree.children[i], visited, maxDivisor);
+			if(events[eventTree.data.eventID].divisor == null){
+				events[eventTree.data.eventID].divisor = maxDivisor;
+			}
+			else {
+				if(events[eventTree.data.eventID].divisor < maxDivisor){
+					events[eventTree.data.eventID].divisor = maxDivisor;
+				}
+			}
+		}
+	}
+	return maxDivisor;
 }
 
 //move overlapped events
