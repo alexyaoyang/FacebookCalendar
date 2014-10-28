@@ -9,6 +9,41 @@ function layOutDay(events){
 	renderUI(events);
 	fillSpace(events);
 	moveOverlap(events);
+
+	// $(function(){
+
+ //        var $wrapper = $("#event-container");
+ //        $wrapper.underpoint({
+ //            selector: "*",
+ //            trigger: ["manual"],
+ //            depth: 0
+ //        });
+ //        var redDot = $('<div/>',{
+	// 		id:'dot',
+	// 		class:'redDot'
+	// 	});
+ //        redDot.appendTo($wrapper);
+ //        // Get the elements at a specific point any time you want
+ //        // Important: is not dependent on adding "manual" to the trigger array but is always available
+ //        // So you shouldn't if you're not planning on using the "mousePoint" option
+ //        var $elements = $wrapper.underpoint("point", { x: 300, y: 300 });
+ //        var string = "";
+ //        for(var i = 0; i < $elements.length; i++){
+ //        	string += $elements[i].id;
+ //        }
+ //        alert("under point 300, 300: " + $elements.length + " " + string);
+
+ //        // $(document).on("keyup", function(event){
+ //        //     // 38 = up key
+ //        //     if (event.keyCode == 38) {
+ //        //         var $elements = $wrapper.underpoint("mousePoint");
+ //        //         alert("under mousepoint: " + $elements.length);
+ //        //     }
+ //        // });
+
+
+ //    });
+
 }
 
 function renderUI(events){
@@ -16,7 +51,7 @@ function renderUI(events){
 	var eventLocation = 'Sample Location';
 	var maxWidth = $('#event-container').width();
 	for(var i = 0; i < events.length; i++){
-		console.log('event '+i+' divisor: '+events[i].divisor+' overlapped with: '+events[i].overlapsWith);
+		console.log('event-'+i+' divisor: '+events[i].divisor+' firstFound: '+events[i].firstFound+' deepestFound: '+events[i].deepestFound+' overlapsWith: '+events[i].overlapsWith);
 		var width = maxWidth/events[i].divisor;	
 		var height = events[i].duration;
 		var markup = "";
@@ -90,8 +125,9 @@ function addInfo(events){
 			}
 			else{
 				var deepest = tree.find(deepestFound);
+				var firstFound = tree.find(events[i].firstFound);
 				//if first found and last found depth is same, that is the only place to insert new event
-				if(deepest.depth == events[i].firstFoundDepth){
+				if(deepest.depth == firstFound.depth){
 					if(deepest.depth>1) { deepest.parent.appendChild(events[i],"event-"+i); }
 					else { deepest.appendChild(events[i],"event-"+i); }
 				}
@@ -106,9 +142,9 @@ function addInfo(events){
 						}
 						it = it.parent;
 					}
-					//find first non-overlap on that path and insert event there
+					//find first overlap on that path and insert event as child //using parent below means subroot uses last divisor
 					if(hasGap){
-						while(!checkIfOverlap(events[i],events[it.parent.data.eventID])){ it=it.parent; } 
+						while(!checkIfOverlap(events[i],events[it.data.eventID])){ it=it.parent; } 
 
 						it.appendChild(events[i],"event-"+i);
 					}
@@ -132,17 +168,15 @@ function addInfo(events){
 			else{ break; }
 		}
 	}
-	for(var k = 0; k < tree.children.length; k++){
-		setDivisor(events, tree.children[k], 1);
-	}
+	setDivisor(events, tree, 1);
 }
 
 //dfs to find new event's last overlap with existing event
 function searchForOverlap(event, eventTree, found){
 	if(checkIfOverlap(event,eventTree.data)){
 		found = eventTree.id;
-		if(event.firstFoundDepth==null){
-			event.firstFoundDepth = eventTree.depth;
+		if(event.firstFound==null){
+			event.firstFound = eventTree.id;
 		}
 	}
 	for(var i = 0; i < eventTree.children.length; i++){
@@ -154,26 +188,27 @@ function searchForOverlap(event, eventTree, found){
 
 //dfs to set divisor for UI rendering
 function setDivisor(events, eventTree, maxDivisor){
+	//reached deepest, assign maxDivisor and return stack
 	if(eventTree.children.length == 0){
 		maxDivisor = eventTree.depth;
-		events[eventTree.data.eventID].divisor = maxDivisor;
+		if(events[eventTree.data.eventID].divisor == null){
+			events[eventTree.data.eventID].divisor = maxDivisor;
+		}
+		else if(events[eventTree.data.eventID].divisor < maxDivisor){
+			events[eventTree.data.eventID].divisor = maxDivisor;
+		}
 	}
 	else{
 		for(var i = 0; i < eventTree.children.length; i++){
+			//get maxDivisor from children
 			maxDivisor = setDivisor(events, eventTree.children[i], maxDivisor);
-			if(events[eventTree.data.eventID].divisor == null){
-				events[eventTree.data.eventID].divisor = maxDivisor;
-			}
-			else if(events[eventTree.data.eventID].divisor < maxDivisor){
-				events[eventTree.data.eventID].divisor = maxDivisor;
-			}
-			//below is probably wrong
-			if(eventTree.parent.depth == 1){
-				if(events[eventTree.parent.data.eventID].divisor == null){
-					events[eventTree.parent.data.eventID].divisor = maxDivisor;
+			//assign maxDivisor to self
+			if(eventTree.id!="event-root"){
+				if(events[eventTree.data.eventID].divisor == null){
+					events[eventTree.data.eventID].divisor = maxDivisor;
 				}
-				else if(events[eventTree.parent.data.eventID].divisor < maxDivisor){
-					events[eventTree.parent.data.eventID].divisor = maxDivisor;
+				else if(events[eventTree.data.eventID].divisor < maxDivisor){
+					events[eventTree.data.eventID].divisor = maxDivisor;
 				}
 			}
 		}
@@ -253,8 +288,6 @@ function checkIfOverlap(e1, e2){
 	var e1end = e1.end;
 	var e2start = e2.start;
 	var e2end = e2.end;
-
-	if(e1start==e2start && e1end == e2end) return true;
 
 	return (e1start >= e2start && e1start < e2end || 
 	    	e2start >= e1start && e2start < e1end)
