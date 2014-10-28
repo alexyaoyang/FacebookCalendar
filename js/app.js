@@ -7,6 +7,7 @@ function layOutDay(events){
 	moveOverlap(events);
 }
 
+//counts number of overlapped elemnents at a point
 function getElementsUnder(xPos, yPos){
 	var $wrapper = $("#event-container");
 	$wrapper.underpoint({
@@ -17,6 +18,7 @@ function getElementsUnder(xPos, yPos){
 	return $wrapper.underpoint("point", { x: xPos, y: yPos });
 }
 
+// determines divisor, width and content to assign
 function renderUI(events){
 
 	var eventName = 'Sample Item';
@@ -27,8 +29,8 @@ function renderUI(events){
 	var eventsX = eventContainerRect.left+11;
 	var maxWidth = $('#event-container').width();
 
-    
     //check one line of 720 pixels down from the top of events container
+    ////////////////////
     for(var j = eventsY; j < eventsY+720; j+=10){
         var $elements = getElementsUnder(eventsX,j);
 
@@ -39,9 +41,9 @@ function renderUI(events){
     		if(events[eventID].divisor == null || events[eventID].divisor < $elements.length){
     			events[eventID].divisor = $elements.length;
     		}
-    		//console.log(id+' divisor '+events[eventID].divisor);
     	}
     }
+    // width and content
 	for(var i = 0; i < events.length; i++){
 		var event = $('#event-'+i);
 		events[i].width = maxWidth/events[i].divisor;
@@ -93,12 +95,13 @@ function addInfo(events){
 			else{ break; }
 		}
 
-		console.log('event-'+i+' overlapsWith: '+events[i].overlapsWith);
-		var height = events[i].duration;
 		var event = $('<div/>',{
 			id:'event-'+i,
 			class:'event gray small-font'
 		});
+
+		console.log('event-'+i+' overlapsWith: '+events[i].overlapsWith);
+		var height = events[i].duration;
 		var start = i===0?events[i].start:events[i].start-events[i].previousDurations;
 		events[i].width = -1;
 		events[i].height = height;
@@ -118,6 +121,7 @@ function addInfo(events){
 	}
 }
 
+//moves function to avoid overlap visually
 function moveOverlap(events){
 	for(var i = 1; i < events.length; i++){
 		//if it has overlaps and if first overlap is a parent/ancestor, then we need to move it
@@ -129,44 +133,30 @@ function moveOverlap(events){
 				if(events[i].overlapsWith[j] > i) { break; }
 
 				var currentOverlap = $('#event-'+events[i].overlapsWith[j]);
-				var parent = $('#event-'+(i-1));
 				var currentCheck = currentOverlap;
 				var toIncrease = events[events[i].overlapsWith[j]].width;
+
 				//if doesn't intersect with parent/ancestor or immediate parent
-				if((!doTheyOverlap(eventToMove,currentOverlap) && !doTheyOverlap(eventToMove,parent))) {
+				if(!doTheyOverlap(eventToMove,currentOverlap)) {
 					//check through all ancestor to clear current event or else report first ancestor overlap
 					var k = 0;
 					for(; k < events[i].overlapsWith.length; k++){
-						if(doTheyOverlap(eventToMove,$('#event-'+events[i].overlapsWith[k]))) { break; }
+						if(doTheyOverlap(eventToMove,$('#event-'+events[i].overlapsWith[k]))) { 
+							toIncrease = events[events[i].overlapsWith[k]].width;
+							currentCheck = $('#event-'+events[i].overlapsWith[k]);
+							break; 
+						}
 					}
 					//cleared
 					if(k == events[i].overlapsWith.length) { break; }
 				}
 
-				//if doesn't overlap with parent/ancestor but overlaps with immediate parent
-				if(!doTheyOverlap(eventToMove,currentOverlap) &&
-						doTheyOverlap(eventToMove,parent)){
-					toIncrease = events[i-1].width;
-					currentCheck = parent;
-				}
-
-				console.log(i+" "+toIncrease);
 				//keep moving until it doesn't overlap
 				while(doTheyOverlap(eventToMove,currentCheck)){
 					var left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+toIncrease;
 					eventToMove.css('left',left);
 				}
 			}
-			// var eventRect = document.getElementById("event-"+i).getBoundingClientRect();
-			// var eventY = eventContainerRect.top;
-			// var eventX = eventContainerRect.left;
-			// var $elements = getElementsUnder(eventX,eventY);
-			// // edge case: doesnt overlap with first parent/ancestor nor immediate parent but overlaps with another ancestor. 
-			// // continue moving if current event is still overlapped, not done with overlaps 
-			// // and j still in ancestor level
-			// if($elements.length>1 && j < events[i].overlapsWith.length && events[i].overlapsWith[j] < i){
-
-			// }
 		}
 	}
 }
@@ -258,14 +248,17 @@ function initialize(){
 	for(var i = 9; i < 22; i++){
 		var hour = i%12;
 		if(i%12 === 0) { AMPM = ' PM';hour = 12; }
+		
 		var mainTime = $('<span/>',{
 			class:'bold big-font',
 			html:hour + AMPM + '<br>'
 		});
+		
 		var halfTime = $('<span/>',{
 			class:'gray',
 			html:hour+':30<br>'
 		});
+		
 		mainTime.appendTo('#time-container');
 		if(i!=21) { halfTime.appendTo('#time-container'); }
 	}
