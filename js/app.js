@@ -21,8 +21,8 @@ function getElementsUnder(xPos, yPos){
 // determines divisor, width and content to assign
 function renderUI(events){
 
-	var eventName = 'Sample Item';
-	var eventLocation = 'Sample Location';
+	var eventName = 'Event';
+	var eventLocation = 'Location';
 
 	var eventContainerRect = document.getElementById("event-container").getBoundingClientRect();
 	var eventsY = eventContainerRect.top;
@@ -50,11 +50,11 @@ function renderUI(events){
 		var width = events[i].width;
 		var height = events[i].height;
 		var markup = "";
-		if(height>18 && width>50){
+		if(height>18 && width>43){
 			markup = '<span class="facebook-color big-font">'+eventName+i+' </span><br>';
 		}
-		if(height>33 && width>40){
-			markup += eventLocation;
+		if(height>28 && width>43){
+			markup += eventLocation+i;
 		}
 		event.css('width',width>10?width-10:0); //-10 for blue event border (4) + right gray border (1) + padding (5)
 		event.html(markup);
@@ -136,7 +136,7 @@ function moveOverlap(events){
 				var currentCheck = currentOverlap;
 				var toIncrease = events[events[i].overlapsWith[j]].width;
 
-				//if doesn't intersect with parent/ancestor or immediate parent
+				//if doesn't intersect with current parent/ancestor 
 				if(!doTheyOverlap(eventToMove,currentOverlap)) {
 					//check through all ancestor to clear current event or else report first ancestor overlap
 					var k = 0;
@@ -144,6 +144,7 @@ function moveOverlap(events){
 						if(doTheyOverlap(eventToMove,$('#event-'+events[i].overlapsWith[k]))) { 
 							toIncrease = events[events[i].overlapsWith[k]].width;
 							currentCheck = $('#event-'+events[i].overlapsWith[k]);
+							//j = k;
 							break; 
 						}
 					}
@@ -155,8 +156,10 @@ function moveOverlap(events){
 				while(doTheyOverlap(eventToMove,currentCheck)){
 					var left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+toIncrease;
 					eventToMove.css('left',left);
+					events[i].left = left;
 				}
 			}
+
 		}
 	}
 }
