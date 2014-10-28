@@ -232,6 +232,9 @@ function swapStartEndIfNeeded(events){
 			events[i].start = events[i].end;
 			events[i].end = temp;
 		}
+		if(events[i].end>720){
+			events[i].end = 720;
+		}
 	}
 }
 
