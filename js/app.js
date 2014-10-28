@@ -120,20 +120,30 @@ function addInfo(events){
 
 function moveOverlap(events){
 	for(var i = 1; i < events.length; i++){
-		//if it has overlaps and if first overlap is a parent, then we need to move it
+		//if it has overlaps and if first overlap is a parent/ancestor, then we need to move it
 		if(events[i].overlapsWith.length>0 && events[i].overlapsWith[0]<i){
 			var eventToMove = $('#event-'+i);
-			for(var j = 0; j < events[i].overlapsWith.length; j++){
+			var j = 0;
+			for(; j < events[i].overlapsWith.length; j++){
+				//break if current overlap is a child
+				if(events[i].overlapsWith[j] > i) { break; }
+
 				var currentOverlap = $('#event-'+events[i].overlapsWith[j]);
 				var parent = $('#event-'+(i-1));
-				//break if current overlap is child or doesn't intersect with current overlap or immediate parent
-				if(events[i].overlapsWith[j] > i || 
-					(!doTheyOverlap(eventToMove,currentOverlap) &&
-						!doTheyOverlap(eventToMove,parent))) { break; }
 				var currentCheck = currentOverlap;
 				var toIncrease = events[events[i].overlapsWith[j]].width;
+				//if doesn't intersect with parent/ancestor or immediate parent
+				if((!doTheyOverlap(eventToMove,currentOverlap) && !doTheyOverlap(eventToMove,parent))) {
+					//check through all ancestor to clear current event or else report first ancestor overlap
+					var k = 0;
+					for(; k < events[i].overlapsWith.length; k++){
+						if(doTheyOverlap(eventToMove,$('#event-'+events[i].overlapsWith[k]))) { break; }
+					}
+					//cleared
+					if(k == events[i].overlapsWith.length) { break; }
+				}
 
-				//if doesn't intersect with current overlap but overlaps with immediate parent
+				//if doesn't overlap with parent/ancestor but overlaps with immediate parent
 				if(!doTheyOverlap(eventToMove,currentOverlap) &&
 						doTheyOverlap(eventToMove,parent)){
 					toIncrease = events[i-1].width;
@@ -141,30 +151,25 @@ function moveOverlap(events){
 				}
 
 				console.log(i+" "+toIncrease);
+				//keep moving until it doesn't overlap
 				while(doTheyOverlap(eventToMove,currentCheck)){
 					var left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+toIncrease;
 					eventToMove.css('left',left);
 				}
 			}
+			// var eventRect = document.getElementById("event-"+i).getBoundingClientRect();
+			// var eventY = eventContainerRect.top;
+			// var eventX = eventContainerRect.left;
+			// var $elements = getElementsUnder(eventX,eventY);
+			// // edge case: doesnt overlap with first parent/ancestor nor immediate parent but overlaps with another ancestor. 
+			// // continue moving if current event is still overlapped, not done with overlaps 
+			// // and j still in ancestor level
+			// if($elements.length>1 && j < events[i].overlapsWith.length && events[i].overlapsWith[j] < i){
+
+			// }
 		}
 	}
 }
-
-// move overlapped events
-// function moveOverlap(events){
-// 	for(var i = 0; i < events.length; i++){
-// 		for(var k = 0; k < events[i].overlapsWith.length; k++){
-// 			if(events[i].overlapsWith[k]>i){
-// 				var multiplier = 1;
-// 				var eventToMove = $('#event-'+events[i].overlapsWith[k]);
-// 				while(doTheyOverlap($('#event-'+i),eventToMove)){
-// 					var left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+events[events[i].overlapsWith[k]].width;
-// 					eventToMove.css('left',left);
-// 				}
-// 			}
-// 		}
-// 	}
-// }
 
 // fill extra space on UI
 // function fillSpace(events){
