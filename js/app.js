@@ -50,11 +50,11 @@ function renderUI(events){
 		var width = events[i].width;
 		var height = events[i].height;
 		var markup = "";
-		if(height>18 && width>43){
-			markup = '<span class="facebook-color big-font">'+eventName+i+' </span><br>';
+		if(height>17 && width>33){
+			markup = '<span class="facebook-color big-font">'+eventName+' </span><br>';
 		}
-		if(height>28 && width>43){
-			markup += eventLocation+i;
+		if(height>28 && width>33){
+			markup += eventLocation;
 		}
 		event.css('width',width>10?width-10:0); //-10 for blue event border (4) + right gray border (1) + padding (5)
 		event.html(markup);
