@@ -245,6 +245,9 @@ function swapStartEndIfNeeded(events){
 //sort based on start time
 function sort(events){
 	events.sort(function(e1,e2){
+		if(e1.start == e2.start){
+			return e2.end-e1.end;
+		}
 		return e1.start - e2.start;
 	});
 }
