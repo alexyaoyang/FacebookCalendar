@@ -142,7 +142,7 @@ function moveOverlap(events){
 					var k = 0;
 					for(; k < events[i].overlapsWith.length; k++){
 						if(doTheyOverlap(eventToMove,$('#event-'+events[i].overlapsWith[k]))) { 
-							toIncrease = events[events[i].overlapsWith[k]].width;
+							toIncrease = events[events[i].overlapsWith[k]].width+events[events[i].overlapsWith[k]].left-events[i].left;
 							currentCheck = $('#event-'+events[i].overlapsWith[k]);
 							//j = k;
 							break; 
