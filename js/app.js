@@ -1,101 +1,73 @@
-// root for event tree
-var tree = new Arboreal(tree,{},"event-root");
-
 function layOutDay(events){
 	clearCalendar();
 	swapStartEndIfNeeded(events);
 	sort(events);
 	addInfo(events);
 	renderUI(events);
-	fillSpace(events);
 	moveOverlap(events);
+}
 
-	// $(function(){
-
- //        var $wrapper = $("#event-container");
- //        $wrapper.underpoint({
- //            selector: "*",
- //            trigger: ["manual"],
- //            depth: 0
- //        });
- //        var redDot = $('<div/>',{
-	// 		id:'dot',
-	// 		class:'redDot'
-	// 	});
- //        redDot.appendTo($wrapper);
- //        // Get the elements at a specific point any time you want
- //        // Important: is not dependent on adding "manual" to the trigger array but is always available
- //        // So you shouldn't if you're not planning on using the "mousePoint" option
- //        var $elements = $wrapper.underpoint("point", { x: 300, y: 300 });
- //        var string = "";
- //        for(var i = 0; i < $elements.length; i++){
- //        	string += $elements[i].id;
- //        }
- //        alert("under point 300, 300: " + $elements.length + " " + string);
-
- //        // $(document).on("keyup", function(event){
- //        //     // 38 = up key
- //        //     if (event.keyCode == 38) {
- //        //         var $elements = $wrapper.underpoint("mousePoint");
- //        //         alert("under mousepoint: " + $elements.length);
- //        //     }
- //        // });
-
-
- //    });
-
+function getElementsUnder(xPos, yPos){
+	var $wrapper = $("#event-container");
+	$wrapper.underpoint({
+	    selector: "*",
+	    trigger: ["manual"],
+	    depth: 0
+	});
+	return $wrapper.underpoint("point", { x: xPos, y: yPos });
 }
 
 function renderUI(events){
+
 	var eventName = 'Sample Item';
 	var eventLocation = 'Sample Location';
+
+	var eventContainerRect = document.getElementById("event-container").getBoundingClientRect();
+	var eventsY = eventContainerRect.top;
+	var eventsX = eventContainerRect.left+11;
 	var maxWidth = $('#event-container').width();
+
+    
+    //check one line of 720 pixels down from the top of events container
+    for(var j = eventsY; j < eventsY+720; j+=10){
+        var $elements = getElementsUnder(eventsX,j);
+
+        for(var i = 0; i < $elements.length; i++){
+    		var id = $elements[i].id;
+    		var eventID = parseInt(id.substring(id.indexOf('-')+1));
+
+    		if(events[eventID].divisor == null || events[eventID].divisor < $elements.length){
+    			events[eventID].divisor = $elements.length;
+    		}
+    		//console.log(id+' divisor '+events[eventID].divisor);
+    	}
+    }
 	for(var i = 0; i < events.length; i++){
-		console.log('event-'+i+' divisor: '+events[i].divisor+' firstFound: '+events[i].firstFound+' deepestFound: '+events[i].deepestFound+' overlapsWith: '+events[i].overlapsWith);
-		var width = maxWidth/events[i].divisor;	
-		var height = events[i].duration;
+		var event = $('#event-'+i);
+		events[i].width = maxWidth/events[i].divisor;
+		var width = events[i].width;
+		var height = events[i].height;
 		var markup = "";
-		if(height>15 && width>45){
+		if(height>18 && width>50){
 			markup = '<span class="facebook-color big-font">'+eventName+i+' </span><br>';
 		}
-		if(height>29 && width>35){
+		if(height>33 && width>40){
 			markup += eventLocation;
 		}
-		var event = $('<div/>',{
-			id:'event-'+i,
-			class:'event gray small-font',
-			html:markup,
-			divisor:events[i].divisor
-		});
-		var start = i==0?events[i].start:events[i].start-events[i].previousDurations;
-		events[i].width = width;
-
-		event.css('height',height>2?height-2:0); //-2 for top and bottom border (2 x 1)
 		event.css('width',width>10?width-10:0); //-10 for blue event border (4) + right gray border (1) + padding (5)
-		event.css('top',start);
-
-		if(height == 1){
-			event.css('border-top','none');
-		}
-		else if(height == 0){
-			event.css('border','none');
-		}
-		event.appendTo('#event-container');
+		event.html(markup);
+		event.attr('divisor',events[i].divisor);
 	}
 }
 
 //clears calendar and tree for next set of instructions
 function clearCalendar(){
-	var i=0;
-	while(true){
-		if($('#event-'+i).length){
-			$('#event-'+i).remove();
-		}
+	scroll(0,0);
+
+	for(var i = 0; ;i++){
+		if($('#event-'+i).length){ $('#event-'+i).remove(); }
 		else { break; }
-		i++;
 	}
-	tree = new Arboreal(tree,{},"event-root");
-	tree.depth = 0;
 }
 
 //preprocess events: total duration so far, add into tree, who it overlaps with and add divisor
@@ -110,53 +82,6 @@ function addInfo(events){
 		events[i].eventID = i;
 		accumulativeDuration += events[i].duration;
 
-		if(tree.getLength() == 1){ // if tree is empty
-			tree.appendChild(events[i],"event-"+i);
-		}
-		else {
-			var deepestFound = "event-root";
-			for(var k = 0; k < tree.children.length; k++){
-				deepestFound = searchForOverlap(events[i],tree.children[k],"event-root");
-				if(deepestFound != "event-root"){ events[i].deepestFound = deepestFound;break; }
-			}
-			console.log("event "+i+ " deepestFound: "+deepestFound);
-			if(k == tree.children.length){ //if not found, add to root
-				tree.appendChild(events[i],"event-"+i);
-			}
-			else{
-				var deepest = tree.find(deepestFound);
-				var firstFound = tree.find(events[i].firstFound);
-				//if first found and last found depth is same, that is the only place to insert new event
-				if(deepest.depth == firstFound.depth){
-					if(deepest.depth>1) { deepest.parent.appendChild(events[i],"event-"+i); }
-					else { deepest.appendChild(events[i],"event-"+i); }
-				}
-				else{
-					var it = deepest.parent;
-					var hasGap = false;
-					while(it.id!="event-root"){
-						//if somewhere along the path from root to last overlap, one or more events don't overlap
-						if(!checkIfOverlap(events[i],events[it.data.eventID])){ 
-							hasGap = true;
-							break;
-						}
-						it = it.parent;
-					}
-					//find first overlap on that path and insert event as child //using parent below means subroot uses last divisor
-					if(hasGap){
-						while(!checkIfOverlap(events[i],events[it.data.eventID])){ it=it.parent; } 
-
-						it.appendChild(events[i],"event-"+i);
-					}
-					//has no gap, insert event after last overlap
-					else{ 
-						deepest.appendChild(events[i],"event-"+i);
-					}
-				}
-			}
-
-		}
-
 		for(var j = i+1; j < events.length; j++){
 			if(checkIfOverlap(events[i],events[j])){
 				if(events[j].overlapsWith==null){
@@ -167,64 +92,57 @@ function addInfo(events){
 			}
 			else{ break; }
 		}
+
+		console.log('event-'+i+' overlapsWith: '+events[i].overlapsWith);
+		var height = events[i].duration;
+		var event = $('<div/>',{
+			id:'event-'+i,
+			class:'event gray small-font'
+		});
+		var start = i===0?events[i].start:events[i].start-events[i].previousDurations;
+		events[i].width = -1;
+		events[i].height = height;
+		events[i].start = start;
+
+		event.css('height',height>2?height-2:0); //-2 for top and bottom border (2 x 1)
+		event.css('width',0); //-10 for blue event border (4) + right gray border (1) + padding (5)
+		event.css('top',start);
+
+		if(height === 1){
+			event.css('border-top','none');
+		}
+		else if(height === 0){
+			event.css('border','none');
+		}
+		event.appendTo('#event-container');
 	}
-	setDivisor(events, tree, 1);
 }
 
-//dfs to find new event's last overlap with existing event
-function searchForOverlap(event, eventTree, found){
-	if(checkIfOverlap(event,eventTree.data)){
-		found = eventTree.id;
-		if(event.firstFound==null){
-			event.firstFound = eventTree.id;
-		}
-	}
-	for(var i = 0; i < eventTree.children.length; i++){
-		found = searchForOverlap(event, eventTree.children[i], found);
-	}
-	
-	return found;
-}
-
-//dfs to set divisor for UI rendering
-function setDivisor(events, eventTree, maxDivisor){
-	//reached deepest, assign maxDivisor and return stack
-	if(eventTree.children.length == 0){
-		maxDivisor = eventTree.depth;
-		if(events[eventTree.data.eventID].divisor == null){
-			events[eventTree.data.eventID].divisor = maxDivisor;
-		}
-		else if(events[eventTree.data.eventID].divisor < maxDivisor){
-			events[eventTree.data.eventID].divisor = maxDivisor;
-		}
-	}
-	else{
-		for(var i = 0; i < eventTree.children.length; i++){
-			//get maxDivisor from children
-			maxDivisor = setDivisor(events, eventTree.children[i], maxDivisor);
-			//assign maxDivisor to self
-			if(eventTree.id!="event-root"){
-				if(events[eventTree.data.eventID].divisor == null){
-					events[eventTree.data.eventID].divisor = maxDivisor;
-				}
-				else if(events[eventTree.data.eventID].divisor < maxDivisor){
-					events[eventTree.data.eventID].divisor = maxDivisor;
-				}
-			}
-		}
-	}
-	return maxDivisor;
-}
-
-// move overlapped events
 function moveOverlap(events){
-	for(var i = 0; i < events.length; i++){
-		for(var k = 0; k < events[i].overlapsWith.length; k++){
-			if(events[i].overlapsWith[k]>i){
-				var multiplier = 1;
-				var eventToMove = $('#event-'+events[i].overlapsWith[k]);
-				while(doTheyOverlap($('#event-'+i),eventToMove)){
-					var left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+events[events[i].overlapsWith[k]].width;
+	for(var i = 1; i < events.length; i++){
+		//if it has overlaps and if first overlap is a parent, then we need to move it
+		if(events[i].overlapsWith.length>0 && events[i].overlapsWith[0]<i){
+			var eventToMove = $('#event-'+i);
+			for(var j = 0; j < events[i].overlapsWith.length; j++){
+				var currentOverlap = $('#event-'+events[i].overlapsWith[j]);
+				var parent = $('#event-'+(i-1));
+				//break if current overlap is child or doesn't intersect with current overlap or immediate parent
+				if(events[i].overlapsWith[j] > i || 
+					(!doTheyOverlap(eventToMove,currentOverlap) &&
+						!doTheyOverlap(eventToMove,parent))) { break; }
+				var currentCheck = currentOverlap;
+				var toIncrease = events[events[i].overlapsWith[j]].width;
+
+				//if doesn't intersect with current overlap but overlaps with immediate parent
+				if(!doTheyOverlap(eventToMove,currentOverlap) &&
+						doTheyOverlap(eventToMove,parent)){
+					toIncrease = events[i-1].width;
+					currentCheck = parent;
+				}
+
+				console.log(i+" "+toIncrease);
+				while(doTheyOverlap(eventToMove,currentCheck)){
+					var left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+toIncrease;
 					eventToMove.css('left',left);
 				}
 			}
@@ -232,29 +150,45 @@ function moveOverlap(events){
 	}
 }
 
-//fill extra space on UI
-function fillSpace(events){
-	var eventStart = document.getElementById('event-'+0).getBoundingClientRect().left;
-	var maxWidth = $('#event-container').width();
-	for(var i = 1; i < events.length; i++){
-		var it = tree.find("event-"+i);
-		while(it.parent.id!="event-root"){ 
-			if(events[it.data.eventID].divisor!=events[it.parent.data.eventID].divisor){
-				var perUnitSpace = maxWidth / events[it.parent.data.eventID].divisor;
-				var spaceToDivide = maxWidth - (perUnitSpace * it.parent.depth);
-				var newWidth = spaceToDivide / (events[it.data.eventID].divisor - 1);
-				events[i].width = newWidth;
-				$('#event-'+i).css('width',newWidth-10);
-				var parent = document.getElementById('event-'+it.parent.data.eventID);
-				var parentBox = parent.getBoundingClientRect();
-				var parentBoxRight = parentBox.right-eventStart;
-				$('#event-'+i).css('left',parentBoxRight);
-				break;
-			}
-			it = it.parent;
-		} 
-	}
-}
+// move overlapped events
+// function moveOverlap(events){
+// 	for(var i = 0; i < events.length; i++){
+// 		for(var k = 0; k < events[i].overlapsWith.length; k++){
+// 			if(events[i].overlapsWith[k]>i){
+// 				var multiplier = 1;
+// 				var eventToMove = $('#event-'+events[i].overlapsWith[k]);
+// 				while(doTheyOverlap($('#event-'+i),eventToMove)){
+// 					var left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+events[events[i].overlapsWith[k]].width;
+// 					eventToMove.css('left',left);
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+
+// fill extra space on UI
+// function fillSpace(events){
+// 	var eventStart = document.getElementById('event-'+0).getBoundingClientRect().left;
+// 	var maxWidth = $('#event-container').width();
+// 	for(var i = 1; i < events.length; i++){
+// 		var it = tree.find("event-"+i);
+// 		while(it.parent.id!="event-root"){ 
+// 			if(events[it.data.eventID].divisor!=events[it.parent.data.eventID].divisor){
+// 				var perUnitSpace = maxWidth / events[it.parent.data.eventID].divisor;
+// 				var spaceToDivide = maxWidth - (perUnitSpace * it.parent.depth);
+// 				var newWidth = spaceToDivide / (events[it.data.eventID].divisor - 1);
+// 				events[i].width = newWidth;
+// 				$('#event-'+i).css('width',newWidth-10);
+// 				var parent = document.getElementById('event-'+it.parent.data.eventID);
+// 				var parentBox = parent.getBoundingClientRect();
+// 				var parentBoxRight = parentBox.right-eventStart;
+// 				$('#event-'+i).css('left',parentBoxRight);
+// 				break;
+// 			}
+// 			it = it.parent;
+// 		} 
+// 	}
+// }
 
 //check if two events overlap each other visually. 
 //http://stackoverflow.com/questions/11641638/detecting-if-html-element-is-overlapping-another-html-element
@@ -315,7 +249,7 @@ function initialize(){
 	var AMPM = ' AM';
 	for(var i = 9; i < 22; i++){
 		var hour = i%12;
-		if(i%12 == 0) { AMPM = ' PM';hour = 12; }
+		if(i%12 === 0) { AMPM = ' PM';hour = 12; }
 		var mainTime = $('<span/>',{
 			class:'bold big-font',
 			html:hour + AMPM + '<br>'
