@@ -80,7 +80,7 @@
                     x: [ offset.left,
                         offset.left + $(this).outerWidth() ],
                     y: [ offset.top,
-                        offset.top + $(this).outerHeight() ]
+                        offset.top + $(this).outerHeight()-1 ]
                 };
                 return (x >= range.x[0] && x <= range.x[1]) && (y >= range.y[0] && y <= range.y[1])
             });
