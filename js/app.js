@@ -55,15 +55,13 @@ function renderUI(events){
 		markup = "";
 		width = events[i].width;
 		height = events[i].height;
-		if(height>17 && width>38){
-			markup = '<span class="facebook-color big-font">'+eventName+i+' </span><br>';
-		}
-		if(height>28 && width>38){
-			markup += eventLocation;
-		}
-		if(width>10){
-			event.css('width',width-10); //-10 for blue event border (4) + right gray border (1) + padding (5)
-		}	
+		//append event name
+		if(height>17 && width>38){ markup = '<span class="facebook-color big-font">'+eventName+i+' </span><br>'; }
+		//append location
+		if(height>28 && width>38){ markup += eventLocation; }
+
+		//subtract borders and paddings
+		if(width>10){ event.css('width',width-10); } //-10 for blue event border (4) + right gray border (1) + padding (5)
 		else {
 			event.css('padding-left','0px');
 			if(width==0){
@@ -89,7 +87,7 @@ function clearCalendar(){
 	}
 }
 
-//preprocess events: total duration so far, add into tree, who it overlaps with and add divisor
+//preprocess events: total duration so far, who it overlaps with
 function addInfo(events){
 	var accumulativeDuration = 0;
 	var height;
@@ -100,14 +98,10 @@ function addInfo(events){
 		events[i].eventID = i;
 		accumulativeDuration += events[i].duration;
 
+		// determine and store all overlaps
 		for(var j = 0; j < events.length; j++){
 			if(i==j) { continue; }
-			if(checkIfOverlap(events[i],events[j])){
-				if(events[j].overlapsWith==null){
-					events[j].overlapsWith = [];
-				}
-				events[i].overlapsWith.push(j);
-			}
+			if(checkIfOverlap(events[i],events[j])){ events[i].overlapsWith.push(j); }
 		}
 
 		var event = $('<div/>',{
@@ -120,84 +114,78 @@ function addInfo(events){
 		events[i].width = -1;
 		events[i].height = height;
 
-		event.css('height',height>2?height-2:0); //-2 for top and bottom border (2 x 1)
-		event.css('width',0); //-10 for blue event border (4) + right gray border (1) + padding (5)
-		event.css('top',i===0?events[i].start:events[i].start-events[i].previousDurations);
+		event.css('height', height > 2? height - 2 : 0); //-2 for top and bottom border (2 x 1)
+		event.css('width', 0); //-10 for blue event border (4) + right gray border (1) + padding (5)
+		event.css('top', i === 0? events[i].start : events[i].start - events[i].previousDurations);
 
-		if(height === 1){
-			event.css('border-top','none');
-		}
-		else if(height === 0){
-			event.css('border','none');
-		}
+		if(height === 1){ event.css('border-top','none'); }
+		else if(height === 0){ event.css('border','none'); }
+
 		event.appendTo('#event-container');
 	}
 }
 
+//move overlap events so they are adjacent
 function moveOverlap(events){
 	var eventsX = document.getElementById("event-container").getBoundingClientRect().left+10;
 	var eventToMove;
-	var currentCheck;
+	var currentAncestor;
 	var toIncrease;
 	var skippingForward;
 	var needToMove;
-	var secondRoundFullCheck;
+	var lastRoundCheck;
 	var runCount;
 	var antiLockMultiplier = 2;
 
 	for(var i = 1; i < events.length; i++){
-		//if event has overlaps and if first overlap is a parent/ancestor, then we need to move it
+		//if event has overlaps and its first overlap is a parent/ancestor, then we need to move it
 		if(events[i].overlapsWith.length>0 && events[i].overlapsWith[0]<i){
 			runCount = 0;
-			secondRoundFullCheck = false;
+			lastRoundCheck = false;
 			skippingForward = false;
 			needToMove = true;
 			eventToMove = $('#event-'+i);
-			currentCheck = $('#event-'+events[i].overlapsWith[0]);
-			//if current event and first overlap doesn't overlap, then don't need to move it
-			if(doTheyOverlap(eventToMove,currentCheck)){
+			currentAncestor = $('#event-'+events[i].overlapsWith[0]);
+			//if current event and first ancestor doesn't overlap, then don't need to move it
+			if(doTheyOverlap(eventToMove,currentAncestor)){
 				for(var j = 0; j < events[i].overlapsWith.length; j++){
 					runCount++;
-					//break if current overlap is a child, let the child move themselves
-					if(events[i].overlapsWith[j] > i) { break; }
+					currentOverlap = events[i].overlapsWith[j];
+					//break if current ancestor is a child, let the child move themselves
+					if(currentOverlap > i) { break; }
 
-					currentCheck = $('#event-'+events[i].overlapsWith[j]);
+					currentAncestor = $('#event-'+currentOverlap);
 
-					if(!doTheyOverlap(eventToMove,currentCheck) && !skippingForward) {
-						continue;
-					}
+					//break if current event and current ancestor doesn't overlap
+					if(!doTheyOverlap(eventToMove,currentAncestor) && !skippingForward) { continue; }
 
-					//if current overlap and next overlap is continuous, no point moving one by one
-					if(j < (events[i].overlapsWith.length-1) && ((events[i].overlapsWith[j+1]-events[i].overlapsWith[j]) == 1) && !secondRoundFullCheck){
-						//starting to skip forward, determine if it needs to be moved in the first place
-						if(!skippingForward){
-							needToMove = doTheyOverlap(eventToMove,currentCheck);
-						}
+					//if current ancestor and next ancestor is continuous, no point moving one by one (not last round check)
+					if(j < (events[i].overlapsWith.length-1) && ((events[i].overlapsWith[j+1]-currentOverlap) == 1) && !lastRoundCheck){
+						//start to skip forward, determine if it needs to be moved in the first place
+						if(!skippingForward){ needToMove = doTheyOverlap(eventToMove,currentAncestor); }
 						skippingForward = true;
 						continue;
 					}
-					//gap found in overlaps, possible place to slot current event in.
+					//gap found in ancestor, possible place to slot current event in.
 					else {
-						//if skipped here and needs to move
-						if(needToMove){
-							//move to overlap with parent first
-							eventToMove.css('left',currentCheck.offset().left-eventsX);
-						}
+						//skip to ancestor
+						if(needToMove){ eventToMove.css('left',currentAncestor.offset().left-eventsX); }
 
+						//if anti-lock limit reached OR end of overlapped event OR next ancestor is a child
 						if(runCount > (events[i].overlapsWith.length * antiLockMultiplier) || j == events[i].overlapsWith.length-1 || (j < (events[i].overlapsWith.length-1) && events[i].overlapsWith[j+1] > i)){
-							secondRoundFullCheck = true;
+							lastRoundCheck = true;
 						}
 
-						//double check after moving
+						//double check after every move, it might overlap with prior ancestor
 						j = 0;
 						skippingForward = false;
 					}
 
-					toIncrease = currentCheck.outerWidth();
+					//set amount to increase to as ancestor's width
+					toIncrease = currentAncestor.outerWidth();
 
 					var left;
-					//keep moving until it doesn't overlap
-					while(doTheyOverlap(eventToMove,currentCheck)){
+					if(doTheyOverlap(eventToMove,currentAncestor)){
 						left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+toIncrease;
 						eventToMove.css('left',left);
 						events[i].left = left;
@@ -263,7 +251,7 @@ function doTheyOverlap(div0, div1){
     }
 
     return ((divY0.top + smallestHeight) - divY1.top >= -2) &&
-    ((divX0.left + smallestWidth) - divX1.left > 1);
+    		((divX0.left + smallestWidth) - divX1.left > 1);
 }
 
 //check if two events's time overlap
@@ -285,18 +273,14 @@ function swapStartEndIfNeeded(events){
 			events[i].end = temp;
 		}
 		//reduce end time if exceeds max allowed
-		if(events[i].end>720){
-			events[i].end = 720;
-		}
+		if(events[i].end>720){ events[i].end = 720; }
 	}
 }
 
 //sort based on 1) length 2) start time
 function sort(events){
 	events.sort(function(e1,e2){
-		if((e1.end-e1.start) == (e2.end-e2.start)){
-			return e1.start - e2.start;
-		}
+		if((e1.end-e1.start) == (e2.end-e2.start)){ return e1.start - e2.start; }
 		return (e2.end-e2.start) - (e1.end-e1.start);
 	});
 }
