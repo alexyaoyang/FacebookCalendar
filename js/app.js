@@ -1,14 +1,22 @@
+/*
+ * Alex Yao
+ * Facebook Challenge
+ * 2014
+ */
+
 function layOutDay(events){
-	clearCalendar();
-	swapStartEndIfNeeded(events);
-	sort(events);
-	addInfo(events);
-	renderUI(events);
-	moveOverlap(events);
+	Calendar.clearCalendar();
+	Calendar.swapStartEndIfNeeded(events);
+	Calendar.sort(events);
+	Calendar.addInfo(events);
+	Calendar.renderUI(events);
+	Calendar.moveOverlap(events);
 }
 
+var Calendar = {
+
 //counts number of overlapped elemnents at a point
-function getElementsUnder(xPos, yPos){
+getElementsUnder: function(xPos, yPos){
 	var $wrapper = $("#event-container");
 	$wrapper.underpoint({
 	    selector: "*",
@@ -16,10 +24,10 @@ function getElementsUnder(xPos, yPos){
 	    depth: 0
 	});
 	return $wrapper.underpoint("point", { x: xPos, y: yPos });
-}
+},
 
 // determines divisor, width and content to assign
-function renderUI(events){
+renderUI: function(events){
 	var eventName = '';
 	var eventLocation = 'Location';
 
@@ -33,7 +41,7 @@ function renderUI(events){
 	var hop = 3;
     //check one line of 720 pixels down from the top of events container
     for(var j = eventsY; j < eventsY+720; j+=hop){
-        $elements = getElementsUnder(eventsX,j);
+        $elements = Calendar.getElementsUnder(eventsX,j);
         //for each element overlapped
         for(var i = 0; i < $elements.length; i++){
     		id = $elements[i].id;
@@ -76,19 +84,19 @@ function renderUI(events){
 		event.html(markup);
 		event.attr('divisor',events[i].divisor);
 	}
-}
+},
 
 //clears calendar and tree for next set of instructions
-function clearCalendar(){
+clearCalendar: function(){
 	scroll(0,0);
 	for(var i = 0; ;i++){
 		if($('#event-'+i).length){ $('#event-'+i).remove(); }
 		else { break; }
 	}
-}
+},
 
 //preprocess events: total duration so far, who it overlaps with
-function addInfo(events){
+addInfo: function(events){
 	var accumulativeDuration = 0;
 	var height;
 	for(var i = 0; i < events.length; i++){
@@ -101,7 +109,7 @@ function addInfo(events){
 		// determine and store all overlaps
 		for(var j = 0; j < events.length; j++){
 			if(i==j) { continue; }
-			if(checkIfOverlap(events[i],events[j])){ events[i].overlapsWith.push(j); }
+			if(Calendar.checkIfOverlap(events[i],events[j])){ events[i].overlapsWith.push(j); }
 		}
 
 		var event = $('<div/>',{
@@ -123,10 +131,10 @@ function addInfo(events){
 
 		event.appendTo('#event-container');
 	}
-}
+},
 
 //move overlap events so they are adjacent
-function moveOverlap(events){
+moveOverlap: function(events){
 	var eventsX = document.getElementById("event-container").getBoundingClientRect().left+10;
 	var eventToMove;
 	var currentAncestor;
@@ -147,7 +155,7 @@ function moveOverlap(events){
 			eventToMove = $('#event-'+i);
 			currentAncestor = $('#event-'+events[i].overlapsWith[0]);
 			//if current event and first ancestor doesn't overlap, then don't need to move it
-			if(doTheyOverlap(eventToMove,currentAncestor)){
+			if(Calendar.doTheyOverlap(eventToMove,currentAncestor)){
 				for(var j = 0; j < events[i].overlapsWith.length; j++){
 					runCount++;
 					currentOverlap = events[i].overlapsWith[j];
@@ -157,12 +165,12 @@ function moveOverlap(events){
 					currentAncestor = $('#event-'+currentOverlap);
 
 					//break if current event and current ancestor doesn't overlap
-					if(!doTheyOverlap(eventToMove,currentAncestor) && !skippingForward) { continue; }
+					if(!Calendar.doTheyOverlap(eventToMove,currentAncestor) && !skippingForward) { continue; }
 
 					//if current ancestor and next ancestor is continuous, no point moving one by one (not last round check)
 					if(j < (events[i].overlapsWith.length-1) && ((events[i].overlapsWith[j+1]-currentOverlap) == 1) && !lastRoundCheck){
 						//start to skip forward, determine if it needs to be moved in the first place
-						if(!skippingForward){ needToMove = doTheyOverlap(eventToMove,currentAncestor); }
+						if(!skippingForward){ needToMove = Calendar.doTheyOverlap(eventToMove,currentAncestor); }
 						skippingForward = true;
 						continue;
 					}
@@ -185,7 +193,7 @@ function moveOverlap(events){
 					toIncrease = currentAncestor.outerWidth();
 
 					var left;
-					if(doTheyOverlap(eventToMove,currentAncestor)){
+					if(Calendar.doTheyOverlap(eventToMove,currentAncestor)){
 						left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+toIncrease;
 						eventToMove.css('left',left);
 						events[i].left = left;
@@ -194,7 +202,7 @@ function moveOverlap(events){
 			}
 		}
 	}
-}
+},
 
 // fill extra space on UI
 // function fillSpace(events){
@@ -222,7 +230,7 @@ function moveOverlap(events){
 
 //check if two events overlap each other visually. 
 //http://stackoverflow.com/questions/11641638/detecting-if-html-element-is-overlapping-another-html-element
-function doTheyOverlap(div0, div1){
+doTheyOverlap: function(div0, div1){
 	var divOffset0 = div0.offset();
 	var divOffset1 = div1.offset();
 
@@ -252,10 +260,10 @@ function doTheyOverlap(div0, div1){
 
     return ((divY0.top + smallestHeight) - divY1.top >= -2) &&
     		((divX0.left + smallestWidth) - divX1.left > 1);
-}
+},
 
 //check if two events's time overlap
-function checkIfOverlap(e1, e2){
+checkIfOverlap: function(e1, e2){
 	var e1start = e1.start;
 	var e1end = e1.end;
 	var e2start = e2.start;
@@ -263,9 +271,9 @@ function checkIfOverlap(e1, e2){
 
 	return (e1start >= e2start && e1start < e2end || 
 	    	e2start >= e1start && e2start < e1end)
-}
+},
 
-function swapStartEndIfNeeded(events){
+swapStartEndIfNeeded: function(events){
 	for(var i = 0; i < events.length; i++){
 		if(events[i].start>events[i].end){
 			var temp = events[i].start;
@@ -275,18 +283,18 @@ function swapStartEndIfNeeded(events){
 		//reduce end time if exceeds max allowed
 		if(events[i].end>720){ events[i].end = 720; }
 	}
-}
+},
 
 //sort based on 1) length 2) start time
-function sort(events){
+sort: function(events){
 	events.sort(function(e1,e2){
 		if((e1.end-e1.start) == (e2.end-e2.start)){ return e1.start - e2.start; }
 		return (e2.end-e2.start) - (e1.end-e1.start);
 	});
-}
+},
 
 //automate time creation
-function initialize(){
+initialize: function(){
 	var AMPM = ' AM';
 	var hour;
 	for(var i = 9; i < 22; i++){
@@ -306,4 +314,5 @@ function initialize(){
 		mainTime.appendTo('#time-container');
 		if(i!=21) { halfTime.appendTo('#time-container'); }
 	}
+}
 }
