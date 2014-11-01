@@ -26,7 +26,7 @@ function renderUI(events){
 
 	var eventContainerRect = document.getElementById("event-container").getBoundingClientRect();
 	var eventsY = eventContainerRect.top;
-	var eventsX = eventContainerRect.left+11;
+	var eventsX = eventContainerRect.left+10;
 	var maxWidth = $('#event-container').width();
 	var $elements;
 	var id;
@@ -56,10 +56,10 @@ function renderUI(events){
 		markup = "";
 		width = events[i].width;
 		height = events[i].height;
-		if(height>17 && width>33){
+		if(height>17 && width>38){
 			markup = '<span class="facebook-color big-font">'+eventName+' </span><br>';
 		}
-		if(height>28 && width>33){
+		if(height>28 && width>38){
 			markup += eventLocation;
 		}
 		event.css('width',width>10?width-10:0); //-10 for blue event border (4) + right gray border (1) + padding (5)
@@ -129,17 +129,19 @@ function moveOverlap(events){
 	var eventToMove;
 	var currentCheck;
 	var toIncrease;
+	//start from 1, the first event dont need to move
 	for(var i = 1; i < events.length; i++){
-		//if it has overlaps and if first overlap is a parent/ancestor, then we need to move it
+		//if first event has overlaps and if first overlap is a parent/ancestor, then we need to move it
 		if(events[i].overlapsWith.length>0 && events[i].overlapsWith[0]<i){
 			eventToMove = $('#event-'+i);
 			for(var j = 0; j < events[i].overlapsWith.length; j++){
-				//break if current overlap is a child
+				//break if current overlap is a child, let the child move themselves
 				if(events[i].overlapsWith[j] > i) { break; }
 
+				//calculate which event to check against and how much to move
 				//var currentOverlap = $('#event-'+events[i].overlapsWith[j]);
 				currentCheck = $('#event-'+events[i].overlapsWith[j]);
-				toIncrease = events[events[i].overlapsWith[j]].width;
+				toIncrease = events[events[i].overlapsWith[j]].width<10?10:events[events[i].overlapsWith[j]].width;
 
 				//if doesn't intersect with current parent/ancestor 
 				if(!doTheyOverlap(eventToMove,currentCheck)) {
@@ -147,9 +149,11 @@ function moveOverlap(events){
 					var k = 0;
 					for(; k < events[i].overlapsWith.length; k++){
 						if(doTheyOverlap(eventToMove,$('#event-'+events[i].overlapsWith[k]))) { 
-							toIncrease = events[events[i].overlapsWith[k]].width+events[events[i].overlapsWith[k]].left-events[i].left;
+							//recalculate event to check and how much to move
+							toIncrease = events[events[i].overlapsWith[k]].width<10?10:events[events[i].overlapsWith[k]].width+events[events[i].overlapsWith[k]].left-events[i].left;
 							currentCheck = $('#event-'+events[i].overlapsWith[k]);
 							//j = k;
+							//leave the loop early once found overlap
 							break; 
 						}
 					}
