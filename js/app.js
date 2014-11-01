@@ -30,9 +30,9 @@ function renderUI(events){
 	var $elements;
 	var id;
 	var eventID;
+	var hop = 3;
     //check one line of 720 pixels down from the top of events container
-    ////////////////////
-    for(var j = eventsY; j < eventsY+720; j+=1){
+    for(var j = eventsY; j < eventsY+720; j+=hop){
         $elements = getElementsUnder(eventsX,j);
         //for each element overlapped
         for(var i = 0; i < $elements.length; i++){
@@ -100,15 +100,14 @@ function addInfo(events){
 		events[i].eventID = i;
 		accumulativeDuration += events[i].duration;
 
-		for(var j = i+1; j < events.length; j++){
+		for(var j = 0; j < events.length; j++){
+			if(i==j) { continue; }
 			if(checkIfOverlap(events[i],events[j])){
 				if(events[j].overlapsWith==null){
 					events[j].overlapsWith = [];
 				}
 				events[i].overlapsWith.push(j);
-				events[j].overlapsWith.push(i);
 			}
-			else{ break; }
 		}
 
 		var event = $('<div/>',{
@@ -143,10 +142,13 @@ function moveOverlap(events){
 	var skippingForward;
 	var needToMove;
 	var secondRoundFullCheck;
+	var runCount;
+	var antiLockMultiplier = 2;
 
 	for(var i = 1; i < events.length; i++){
 		//if event has overlaps and if first overlap is a parent/ancestor, then we need to move it
 		if(events[i].overlapsWith.length>0 && events[i].overlapsWith[0]<i){
+			runCount = 0;
 			secondRoundFullCheck = false;
 			skippingForward = false;
 			needToMove = true;
@@ -155,6 +157,7 @@ function moveOverlap(events){
 			//if current event and first overlap doesn't overlap, then don't need to move it
 			if(doTheyOverlap(eventToMove,currentCheck)){
 				for(var j = 0; j < events[i].overlapsWith.length; j++){
+					runCount++;
 					//break if current overlap is a child, let the child move themselves
 					if(events[i].overlapsWith[j] > i) { break; }
 
@@ -181,7 +184,7 @@ function moveOverlap(events){
 							eventToMove.css('left',currentCheck.offset().left-eventsX);
 						}
 
-						if(j == events[i].overlapsWith.length-1 || (j < (events[i].overlapsWith.length-1) && events[i].overlapsWith[j+1] > i)){
+						if(runCount > (events[i].overlapsWith.length * antiLockMultiplier) || j == events[i].overlapsWith.length-1 || (j < (events[i].overlapsWith.length-1) && events[i].overlapsWith[j+1] > i)){
 							secondRoundFullCheck = true;
 						}
 
@@ -281,19 +284,20 @@ function swapStartEndIfNeeded(events){
 			events[i].start = events[i].end;
 			events[i].end = temp;
 		}
+		//reduce end time if exceeds max allowed
 		if(events[i].end>720){
 			events[i].end = 720;
 		}
 	}
 }
 
-//sort based on start time
+//sort based on 1) length 2) start time
 function sort(events){
 	events.sort(function(e1,e2){
-		if(e1.start == e2.start){
-			return e2.end-e1.end;
+		if((e1.end-e1.start) == (e2.end-e2.start)){
+			return e1.start - e2.start;
 		}
-		return e1.start - e2.start;
+		return (e2.end-e2.start) - (e1.end-e1.start);
 	});
 }
 
