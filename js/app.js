@@ -37,19 +37,19 @@ renderUI: function(events){
 
 	var eventContainerRect = document.getElementById("event-container").getBoundingClientRect();
 	var eventsY = eventContainerRect.top;
-	var eventsX = eventContainerRect.left+10;
+	var eventsX = eventContainerRect.left + 10;
 	var maxWidth = $('#event-container').width();
 	var $elements;
 	var id;
 	var eventID;
-	var hop = 3;
+	var hop = 1; //hop speeds up rendering but might skip over very short events; make hop 1 or as short as shortest task
     //check one line of 720 pixels down from the top of events container
     for(var j = eventsY; j < eventsY+720; j+=hop){
         $elements = Calendar.getElementsUnder(eventsX,j);
         //for each element overlapped
         for(var i = 0; i < $elements.length; i++){
     		id = $elements[i].id;
-    		eventID = parseInt(id.substring(id.indexOf('-')+1));
+    		eventID = parseInt(id.substring(id.indexOf('-') + 1));
     		//set divisor if not set or if divisor needs to be changed
     		if(events[eventID].divisor == null || events[eventID].divisor < $elements.length){
     			events[eventID].divisor = $elements.length;
@@ -68,21 +68,21 @@ renderUI: function(events){
 		width = events[i].width;
 		height = events[i].height;
 		//append event name
-		if(height>17 && width>38){ markup = '<span class="facebook-color big-font">'+eventName+i+' </span><br>'; }
+		if(height>17 && width>38){ markup = '<span class="facebook-color big-font">' + eventName+i + ' </span><br>'; }
 		//append location
 		if(height>28 && width>38){ markup += eventLocation; }
 
 		//subtract borders and paddings
 		if(width>10){ event.css('width',width-10); } //-10 for blue event border (4) + right gray border (1) + padding (5)
 		else {
-			event.css('padding-left','0px');
-			if(width==0){
+			event.css('padding-left','0px'); //no more space for text anyway
+			if(width < 2 || width == null){
 				event.css('border','none');
-				event.css('width',width);
+				event.css('width',0);
 			}
 			else {
-				event.css('width',width-2);
-				event.css('border-left','1px solid #3b5998');
+				event.css('border-left','1px solid #3b5998'); //shrink left border
+				event.css('width',width-2); //-2 for left and right border
 			}
 		}
 		event.html(markup);
@@ -90,11 +90,11 @@ renderUI: function(events){
 	}
 },
 
-//clears calendar and tree for next set of instructions
+//clears calendar for next set of instructions
 clearCalendar: function(){
 	scroll(0,0);
 	for(var i = 0; ;i++){
-		if($('#event-'+i).length){ $('#event-'+i).remove(); }
+		if($('#event-' + i).length){ $('#event-' + i).remove(); }
 		else { break; }
 	}
 },
@@ -104,33 +104,32 @@ addInfo: function(events){
 	var accumulativeDuration = 0;
 	var height;
 	for(var i = 0; i < events.length; i++){
-		if(events[i].overlapsWith==null){ events[i].overlapsWith = []; }
-		events[i].duration = events[i].end-events[i].start;
+		if(events[i].overlapsWith == null){ events[i].overlapsWith = []; }
+		events[i].duration = events[i].end - events[i].start;
 		events[i].previousDurations = accumulativeDuration;
 		events[i].eventID = i;
 		accumulativeDuration += events[i].duration;
 
 		// determine and store all overlaps
 		for(var j = 0; j < events.length; j++){
-			if(i==j) { continue; }
+			if(i === j) { continue; }
 			if(Calendar.checkIfOverlap(events[i],events[j])){ events[i].overlapsWith.push(j); }
 		}
 
 		var event = $('<div/>',{
-			id:'event-'+i,
+			id:'event-' + i,
 			class:'event gray small-font'
 		});
 
-		console.log('event-'+i+' overlapsWith: '+events[i].overlapsWith);
+		console.log('event-' + i + ' overlapsWith: ' + events[i].overlapsWith);
 		height = events[i].duration;
-		events[i].width = -1;
 		events[i].height = height;
 
 		event.css('height', height > 2? height - 2 : 0); //-2 for top and bottom border (2 x 1)
 		event.css('width', 0); //-10 for blue event border (4) + right gray border (1) + padding (5)
-		event.css('top', i === 0? events[i].start : events[i].start - events[i].previousDurations);
+		event.css('top', i === 0? events[i].start : events[i].start - events[i].previousDurations); //calculate start position
 
-		if(height === 1){ event.css('border-top','none'); }
+		if(height === 1){ event.css('border-bottom','none'); } //just remove bottom border to make it height of 1
 		else if(height === 0){ event.css('border','none'); }
 
 		event.appendTo('#event-container');
@@ -139,7 +138,7 @@ addInfo: function(events){
 
 //move overlap events so they are adjacent
 moveOverlap: function(events){
-	var eventsX = document.getElementById("event-container").getBoundingClientRect().left+10;
+	var eventsX = document.getElementById("event-container").getBoundingClientRect().left + 10;
 	var eventToMove;
 	var currentAncestor;
 	var toIncrease;
@@ -149,16 +148,17 @@ moveOverlap: function(events){
 	var runCount;
 	var antiLockMultiplier = 2;
 
+	//start from 1, ancestor event dont need to move
 	for(var i = 1; i < events.length; i++){
 		//if event has overlaps and its first overlap is a parent/ancestor, then we need to move it
-		if(events[i].overlapsWith.length>0 && events[i].overlapsWith[0]<i){
+		if(events[i].overlapsWith.length > 0 && events[i].overlapsWith[0] < i){
 			runCount = 0;
 			lastRoundCheck = false;
 			skippingForward = false;
 			needToMove = true;
-			eventToMove = $('#event-'+i);
-			currentAncestor = $('#event-'+events[i].overlapsWith[0]);
-			//if current event and first ancestor doesn't overlap, then don't need to move it
+			eventToMove = $('#event-' + i);
+			currentAncestor = $('#event-' + events[i].overlapsWith[0]);
+			//if current event and first ancestor doesn't overlap, then don't need to move it at all
 			if(Calendar.doTheyOverlap(eventToMove,currentAncestor)){
 				for(var j = 0; j < events[i].overlapsWith.length; j++){
 					runCount++;
@@ -166,13 +166,13 @@ moveOverlap: function(events){
 					//break if current ancestor is a child, let the child move themselves
 					if(currentOverlap > i) { break; }
 
-					currentAncestor = $('#event-'+currentOverlap);
+					currentAncestor = $('#event-' + currentOverlap);
 
 					//break if current event and current ancestor doesn't overlap
 					if(!Calendar.doTheyOverlap(eventToMove,currentAncestor) && !skippingForward) { continue; }
 
 					//if current ancestor and next ancestor is continuous, no point moving one by one (not last round check)
-					if(j < (events[i].overlapsWith.length-1) && ((events[i].overlapsWith[j+1]-currentOverlap) == 1) && !lastRoundCheck){
+					if(j < (events[i].overlapsWith.length - 1) && ((events[i].overlapsWith[j+1] - currentOverlap) === 1) && !lastRoundCheck){
 						//start to skip forward, determine if it needs to be moved in the first place
 						if(!skippingForward){ needToMove = Calendar.doTheyOverlap(eventToMove,currentAncestor); }
 						skippingForward = true;
@@ -180,27 +180,19 @@ moveOverlap: function(events){
 					}
 					//gap found in ancestor, possible place to slot current event in.
 					else {
-						//skip to ancestor
-						if(needToMove){ eventToMove.css('left',currentAncestor.offset().left-eventsX); }
+						//skip to after ancestor
+						if(needToMove){ eventToMove.css('left',currentAncestor.offset().left - eventsX + currentAncestor.outerWidth()); }
 
 						//if anti-lock limit reached OR end of overlapped event OR next ancestor is a child
-						if(runCount > (events[i].overlapsWith.length * antiLockMultiplier) || j == events[i].overlapsWith.length-1 || (j < (events[i].overlapsWith.length-1) && events[i].overlapsWith[j+1] > i)){
+						if(runCount > (events[i].overlapsWith.length * antiLockMultiplier) 
+							|| j === events[i].overlapsWith.length - 1 
+							|| (j < (events[i].overlapsWith.length - 1) && events[i].overlapsWith[j+1] > i)){
 							lastRoundCheck = true;
 						}
 
 						//double check after every move, it might overlap with prior ancestor
 						j = 0;
 						skippingForward = false;
-					}
-
-					//set amount to increase to as ancestor's width
-					toIncrease = currentAncestor.outerWidth();
-
-					var left;
-					if(Calendar.doTheyOverlap(eventToMove,currentAncestor)){
-						left = parseInt(eventToMove.css('left')=='auto'?0:eventToMove.css('left'))+toIncrease;
-						eventToMove.css('left',left);
-						events[i].left = left;
 					}
 				}
 			}
@@ -266,15 +258,15 @@ swapStartEndIfNeeded: function(events){
 			events[i].end = temp;
 		}
 		//reduce end time if exceeds max allowed
-		if(events[i].end>720){ events[i].end = 720; }
+		if(events[i].end > 720){ events[i].end = 720; }
 	}
 },
 
-//sort based on 1) length 2) start time
+//sort based on 1) descending length 2) ascending start time
 sort: function(events){
 	events.sort(function(e1,e2){
-		if((e1.end-e1.start) == (e2.end-e2.start)){ return e1.start - e2.start; }
-		return (e2.end-e2.start) - (e1.end-e1.start);
+		if((e1.end - e1.start) === (e2.end - e2.start)){ return e1.start - e2.start; }
+		return (e2.end - e2.start) - (e1.end - e1.start);
 	});
 },
 
@@ -283,8 +275,8 @@ createTimeLabel: function(){
 	var AMPM = ' AM';
 	var hour;
 	for(var i = 9; i < 22; i++){
-		hour = i%12;
-		if(i%12 === 0) { AMPM = ' PM';hour = 12; }
+		hour = i % 12;
+		if(i % 12 === 0) { AMPM = ' PM'; hour = 12; }
 		
 		var mainTime = $('<span/>',{
 			class:'bold big-font',
@@ -293,11 +285,11 @@ createTimeLabel: function(){
 		
 		var halfTime = $('<span/>',{
 			class:'gray',
-			html:hour+':30<br>'
+			html:hour + ':30<br>'
 		});
 		
 		mainTime.appendTo('#time-container');
-		if(i!=21) { halfTime.appendTo('#time-container'); }
+		if(i != 21) { halfTime.appendTo('#time-container'); }
 	}
 }
 }
