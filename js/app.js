@@ -42,7 +42,7 @@ renderUI: function(events){
 	var $elements;
 	var id;
 	var eventID;
-	var hop = 1; //hop speeds up rendering but might skip over very short events; make hop 1 or as short as shortest task
+	var hop = 1; //higher hop speeds up rendering but might skip over short events; make hop 1 or as small as shortest task
     //check one line of 720 pixels down from the top of events container
     for(var j = eventsY; j < eventsY+720; j+=hop){
         $elements = Calendar.getElementsUnder(eventsX,j);
@@ -198,11 +198,6 @@ moveOverlap: function(events){
 			}
 		}
 	}
-},
-
-// fill extra space on UI
-fillSpace: function(events){
-	//check if current divisor not equal max divisor, then 
 },
 
 //check if two events overlap each other visually. 
