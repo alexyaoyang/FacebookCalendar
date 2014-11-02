@@ -5,15 +5,19 @@
  */
 
 function layOutDay(events){
+	if(events.length>0) { Calendar.gotTheEventsLetsStartWork(events); }
+}
+
+var Calendar = {
+
+gotTheEventsLetsStartWork: function(events){
 	Calendar.clearCalendar();
 	Calendar.swapStartEndIfNeeded(events);
 	Calendar.sort(events);
 	Calendar.addInfo(events);
 	Calendar.renderUI(events);
 	Calendar.moveOverlap(events);
-}
-
-var Calendar = {
+},
 
 //counts number of overlapped elemnents at a point
 getElementsUnder: function(xPos, yPos){
@@ -205,28 +209,9 @@ moveOverlap: function(events){
 },
 
 // fill extra space on UI
-// function fillSpace(events){
-// 	var eventStart = document.getElementById('event-'+0).getBoundingClientRect().left;
-// 	var maxWidth = $('#event-container').width();
-// 	for(var i = 1; i < events.length; i++){
-// 		var it = tree.find("event-"+i);
-// 		while(it.parent.id!="event-root"){ 
-// 			if(events[it.data.eventID].divisor!=events[it.parent.data.eventID].divisor){
-// 				var perUnitSpace = maxWidth / events[it.parent.data.eventID].divisor;
-// 				var spaceToDivide = maxWidth - (perUnitSpace * it.parent.depth);
-// 				var newWidth = spaceToDivide / (events[it.data.eventID].divisor - 1);
-// 				events[i].width = newWidth;
-// 				$('#event-'+i).css('width',newWidth-10);
-// 				var parent = document.getElementById('event-'+it.parent.data.eventID);
-// 				var parentBox = parent.getBoundingClientRect();
-// 				var parentBoxRight = parentBox.right-eventStart;
-// 				$('#event-'+i).css('left',parentBoxRight);
-// 				break;
-// 			}
-// 			it = it.parent;
-// 		} 
-// 	}
-// }
+fillSpace: function(events){
+	//check if current divisor not equal max divisor, then 
+},
 
 //check if two events overlap each other visually. 
 //http://stackoverflow.com/questions/11641638/detecting-if-html-element-is-overlapping-another-html-element
@@ -294,7 +279,7 @@ sort: function(events){
 },
 
 //automate time creation
-initialize: function(){
+createTimeLabel: function(){
 	var AMPM = ' AM';
 	var hour;
 	for(var i = 9; i < 22; i++){
