@@ -61,7 +61,7 @@ addDivisor: function(events){
 
 // determines width and html
 renderUI: function(events){
-	var eventName = 'E';
+	var eventName = 'Event';
 	var eventLocation = 'Location';
 	var maxWidth = $('#event-container').width();
     var event;
@@ -91,7 +91,7 @@ renderUI: function(events){
 			events[i].width = width;
 
 			//append event name
-			if(height > 17 && width > 38){ markup = '<span class="facebook-color big-font">' + eventName+i + ' </span><br>'; }
+			if(height > 17 && width > 38){ markup = '<span class="facebook-color big-font">' + eventName + ' </span><br>'; }
 			//append location
 			if(height > 28 && width > 38){ markup += eventLocation; }
 
