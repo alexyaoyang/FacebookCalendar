@@ -97,9 +97,9 @@ renderUI: function(events){
 			events[i].width = width;
 
 			//append event name
-			if(height > 17 && width > 38){ markup = '<span class="facebook-color big-font">' + eventName+i + ' </span><br>'; }
+			if(height > 17 && width > 42){ markup = '<span class="facebook-color big-font">' + eventName + ' </span><br>'; }
 			//append location
-			if(height > 28 && width > 38){ markup += eventLocation; }
+			if(height > 28 && width > 42){ markup += eventLocation; }
 
 			//subtract borders and paddings
 			if(width > 10){ event.css('width',width - 10); } //-10 for blue event border (4) + right gray border (1) + padding (5)
