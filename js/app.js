@@ -6,6 +6,7 @@
 
 function layOutDay(events){
 	if(events.length>0) { Calendar.gotTheEventsLetsStartWork(events); }
+	else { Calendar.clearCalendar(); }
 }
 
 var Calendar = {
@@ -152,7 +153,8 @@ addInfo: function(events){
 		event.css('top', i === 0? events[i].start : events[i].start - accumulativeDuration); //calculate start position
 
 		if(events[i].height === 1){ event.css('border-bottom','none'); } //just remove bottom border to make it height of 1
-		else if(events[i].height === 0){ event.css('border','none'); } //remove all borders
+		else if(events[i].height === 0 || isNaN(events[i].height)){ 
+		event.css('border','none'); } //remove all borders
 
 		event.appendTo('#event-container');
 
@@ -160,7 +162,9 @@ addInfo: function(events){
 	}
 },
 
-//move overlap events so they are adjacent
+//move events to earliest fitting space without compromising efficiency (.css calls are expensive)
+//by repeating check -> skip and then move
+//instead of repeating check -> move
 moveOverlap: function(events){
 	var eventsX = document.getElementById("event-container").getBoundingClientRect().left + 10;
 	var eventToMove;
@@ -170,7 +174,7 @@ moveOverlap: function(events){
 	var needToMove;
 	var lastRoundCheck;
 	var runCount;
-	var antiLockMultiplier = 2;
+	var antiLockMultiplier = 2; //ensures O(N) performance, x should be kept 1<x<=3 for it to be error prone and useful
 
 	//start from 1, ancestor event dont need to move
 	for(var i = 1; i < events.length; i++){
@@ -195,7 +199,7 @@ moveOverlap: function(events){
 
 					currentAncestor = $('#event-' + currentOverlap);
 
-					//break if current event and current ancestor doesn't overlap
+					//continue if current event and current ancestor doesn't overlap
 					if(!Calendar.doTheyOverlap(eventToMove,currentAncestor) && !skippingForward) { continue; }
 
 					//if current ancestor and next ancestor is continuous, no point moving one by one (not last round check)
@@ -213,6 +217,7 @@ moveOverlap: function(events){
 						if(needToMove){ eventToMove.css('left',currentAncestor.offset().left - eventsX + currentAncestor.outerWidth()); }
 
 						//if anti-lock limit reached OR end of overlapped event OR next ancestor is a child
+						//do a last round check. lastRoundCheck forces check against every ancestor, without skipping.
 						if(runCount > (events[i].overlapsWith.length * antiLockMultiplier) 
 							|| j === events[i].overlapsWith.length - 1 
 							|| (j < (events[i].overlapsWith.length - 1) && events[i].overlapsWith[j+1] > i)){
