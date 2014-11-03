@@ -96,7 +96,7 @@ renderUI: function(events){
 			events[i].width = width;
 
 			//append event name
-			if(height > 17 && width > 38){ markup = '<span class="facebook-color big-font">' + eventName + ' </span><br>'; }
+			if(height > 17 && width > 38){ markup = '<span class="facebook-color big-font">' + eventName+i + ' </span><br>'; }
 			//append location
 			if(height > 28 && width > 38){ markup += eventLocation; }
 
@@ -222,7 +222,7 @@ moveOverlap: function(events){
 						skippingForward = false;
 
 						//double check after every move, it might overlap with prior ancestor
-						j = 0;
+						j = -1;
 					}
 				}
 			}
