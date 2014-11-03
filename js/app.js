@@ -70,19 +70,23 @@ renderUI: function(events){
     var markup;
 
 	for(var i = 0; i < events.length; i++){
-		//if at least 1 minute
+		//if at least 1 minute tall
 		if(events[i].height>0){
 			width = -1;
 
 			//find max width possible for current event
 			for(var j = 0; j < events[i].overlapsWith.length; j++){
-				if(events[events[i].overlapsWith[j]].width != null && width < events[events[i].overlapsWith[j]].width){
+				//break once width is not defined, as all the rest will not be defined
+				if(events[events[i].overlapsWith[j]].width == null){
+					break;
+				}
+				else if(width < events[events[i].overlapsWith[j]].width){
 					width = events[events[i].overlapsWith[j]].width;
 				}
 			}
 
 			//use divisor to calculate width if width not assigned yet
-			if(width == -1){
+			if(width === -1){
 				width = Math.floor(maxWidth/events[i].divisor);
 			}
 			
